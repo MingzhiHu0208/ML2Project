@@ -1,9 +1,9 @@
 # Package requirement for t5model
-torch
-datasets
-transformers
-numpy
-rouge
-accelerate
-rouge
+torch<br>
+datasets<br>
+transformers<br>
+numpy<br>
+rouge<br>
+accelerate<br>
+rouge<br>
 
