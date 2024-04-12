@@ -1,9 +1,14 @@
 # Package requirement for t5model
-torch<br>
+accelerate<br>
 datasets<br>
-transformers<br>
 numpy<br>
 rouge<br>
-accelerate<br>
-rouge<br>
+torch<br>
+transformers<br>
+
+# Package requirement for EasyModel
+Spacy
+python -m spacy download en_core_web_sm
+
+
 
