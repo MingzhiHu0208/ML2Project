@@ -1,7 +1,9 @@
-# Package requirement for t5model
-accelerate<br>
+# Package for reading data
 datasets<br>
 numpy<br>
+
+# Package requirement for t5model
+accelerate<br>
 rouge<br>
 torch<br>
 transformers<br>
