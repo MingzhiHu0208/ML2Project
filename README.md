@@ -9,7 +9,7 @@ torch<br>
 transformers<br>
 
 # Package requirement for EasyModel
-Spacy
+Spacy<br>
 python -m spacy download en_core_web_sm
 
 

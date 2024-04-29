@@ -1,0 +1,939 @@
+<html>
+<head>
+<title>text_summarization.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #bcbec4;}
+</style>
+</head>
+<body bgcolor="#1e1f22">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+text_summarization.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">{ 
+ &quot;cells&quot;: [ 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step1: Import packages&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;8db34d889434acdc&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;execution_count&quot;: 1, 
+   &quot;id&quot;: &quot;initial_id&quot;, 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: true, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-24T20:49:09.521940500Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-24T20:49:01.355947300Z&quot; 
+    } 
+   }, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;import torch\n&quot;, 
+    &quot;import os\n&quot;, 
+    &quot;from datasets import Dataset, load_dataset\n&quot;, 
+    &quot;from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq, Seq2SeqTrainer, Seq2SeqTrainingArguments, AutoModelForPreTraining, pipeline\n&quot;, 
+    &quot;from transformers import T5Tokenizer, T5ForConditionalGeneration&quot; 
+   ] 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step2: Read dataset&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;c666afabc5f91f88&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;DatasetDict({\n    train: Dataset({\n        features: ['article', 'highlights', 'id'],\n        num_rows: 287113\n    })\n    validation: Dataset({\n        features: ['article', 'highlights', 'id'],\n        num_rows: 13368\n    })\n    test: Dataset({\n        features: ['article', 'highlights', 'id'],\n        num_rows: 11490\n    })\n})&quot; 
+     }, 
+     &quot;execution_count&quot;: 2, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;ds = load_dataset(\&quot;cnn_dailymail\&quot;, \&quot;1.0.0\&quot;)\n&quot;, 
+    &quot;ds = ds.shuffle(seed=42)\n&quot;, 
+    &quot;ds&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-24T20:49:17.704934300Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-24T20:49:09.541938400Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;c4c2053330f5ed82&quot;, 
+   &quot;execution_count&quot;: 2 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;{'article': \&quot;By . Anthony Bond . PUBLISHED: . 07:03 EST, 2 March 2013 . | . UPDATED: . 08:07 EST, 2 March 2013 . Three members of the same family who died in a static caravan from carbon monoxide poisoning would have been unconscious 'within minutes', investigators said today. The bodies of married couple John and Audrey Cook were discovered alongside their daughter, Maureen, at the mobile home they shared on Tremarle Home Park in Camborne, west Cornwall. The inquests have now opened into the deaths last Saturday, with investigators saying the three died along with the family's pet dog, of carbon monoxide poisoning from a cooker. Tragic: The inquests have opened into the deaths of three members of the same family who were found in their static caravan last weekend. John and Audrey Cook are pictured . Awful: The family died following carbon monoxide poisoning at this caravan at the Tremarle Home Park in Camborne, Cornwall . It is also believed there was no working carbon monoxide detector in the static caravan. Cornwall Fire and Rescue Service said this would have resulted in the three being unconscious 'within minutes', . A spokesman for Cornwall coroner Dr Emma Carlyon confirmed the inquests were opened and adjourned yesterday afternoon. They will resume at a later date. Devon and Cornwall Police confirmed on Monday that carbon monoxide poisoning had been established as the cause of death. A police spokesman said the source of the poisoning was 'believed to be from incorrect operation of the gas cooker'. Poisoning: This woman left flowers outside the caravan following the deaths. It has emerged that the trio would have been unconscious 'within minutes' Touching: This tribute was left outside the caravan following news of the deaths . Early readings from experts at the site revealed a potentially lethal level of carbon monoxide present within the caravan at the time it was taken, shortly after the discovery of the bodies. Friends and neighbours have paid tribute to the trio. One . neighbour, Sonya Owen, 53, said: 'It's very distressing. I knew the . daughter, she was living her with her mum and dad. Everybody is really . upset.' Margaret Holmes, 65, who lived near the couple and their . daughter, said: 'They had lived here for around 40 years and they kept . themselves to themselves. 'I just can’t believe this has . happened, it is so sad and I am so shocked, I think we all are, you just . don’t expect this sort of thing to happen on your doorstep. 'Everyone will miss them, we used to chat a lot when we were both in the garden. 'I would just like to send my condolences to their family, I can’t imagine what they’re going through.' Nic Clark, 52, who was good friends with daughter Maureen, added: 'They were a lovely kind family, a great trio. 'Maureen . used to go out and walk her dog, a little Jack Russell, it is so sad . what has happened, I understand the dog went with them. 'They . will be sorely missed and I think everyone is just in shock at the . moment, I would like to send my condolences to the Cook family.'\&quot;,\n 'highlights': 'John and . Audrey Cook were discovered alongside their daughter, Maureen . They were found at Tremarle Home Park in Cornwall . Investigators say the three died of carbon monoxide . poisoning .',\n 'id': '08cf276c9eadb638e0c7fdc83ce0229c8af5d09b'}&quot; 
+     }, 
+     &quot;execution_count&quot;: 31, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;ds['train'][0]&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:41:33.879044200Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:41:33.733031100Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;deeee7868868328d&quot;, 
+   &quot;execution_count&quot;: 31 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step2.5: Check GPU is available&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;f26c9d824178003f&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;True&quot; 
+     }, 
+     &quot;execution_count&quot;: 3, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;torch.cuda.is_available()&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-24T20:49:17.788934900Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-24T20:49:17.706936700Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;1564807224476044&quot;, 
+   &quot;execution_count&quot;: 3 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step3: Analyze data&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;1e52881ab8f85f2e&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;tokenizer = T5Tokenizer.from_pretrained(\&quot;./summary/last-checkpoint-10240\&quot;, max_seq_len=1024)\n&quot;, 
+    &quot;#tokenizer = AutoTokenizer.from_pretrained(\&quot;google-t5/t5-small\&quot;, max_length=1024)&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;d8b57694ecd5951&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;def process_func(examples):\n&quot;, 
+    &quot;    contents = ['Generate summary: \\n' + e for e in examples['article']]\n&quot;, 
+    &quot;    inputs = tokenizer(contents, max_length=1024, truncation=True)\n&quot;, 
+    &quot;    labels = tokenizer(text_target=examples['highlights'], max_length=64, truncation=True)\n&quot;, 
+    &quot;    inputs['labels'] = labels['input_ids']\n&quot;, 
+    &quot;    return inputs&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;b6f4f8cbca200087&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;Map:   0%|          | 0/287113 [00:00&lt;?, ? examples/s]&quot;, 
+      &quot;application/vnd.jupyter.widget-view+json&quot;: { 
+       &quot;version_major&quot;: 2, 
+       &quot;version_minor&quot;: 0, 
+       &quot;model_id&quot;: &quot;9b2c180e537b4f428095f519472f288a&quot; 
+      } 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    }, 
+    { 
+     &quot;ename&quot;: &quot;KeyboardInterrupt&quot;, 
+     &quot;evalue&quot;: &quot;&quot;, 
+     &quot;output_type&quot;: &quot;error&quot;, 
+     &quot;traceback&quot;: [ 
+      &quot;\u001B[1;31m---------------------------------------------------------------------------\u001B[0m&quot;, 
+      &quot;\u001B[1;31mKeyboardInterrupt\u001B[0m                         Traceback (most recent call last)&quot;, 
+      &quot;Cell \u001B[1;32mIn[34], line 1\u001B[0m\n\u001B[1;32m----&gt; 1\u001B[0m tokenized_ds \u001B[38;5;241m=\u001B[39m \u001B[43mds\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mmap\u001B[49m\u001B[43m(\u001B[49m\u001B[43mprocess_func\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mbatched\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[38;5;28;43;01mTrue\u001B[39;49;00m\u001B[43m)\u001B[49m\n\u001B[0;32m      2\u001B[0m tokenizer\u001B[38;5;241m.\u001B[39mdecode(tokenized_ds[\u001B[38;5;124m'\u001B[39m\u001B[38;5;124mtrain\u001B[39m\u001B[38;5;124m'\u001B[39m][\u001B[38;5;241m0\u001B[39m][\u001B[38;5;124m'\u001B[39m\u001B[38;5;124minput_ids\u001B[39m\u001B[38;5;124m'\u001B[39m])\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\datasets\\dataset_dict.py:868\u001B[0m, in \u001B[0;36mDatasetDict.map\u001B[1;34m(self, function, with_indices, with_rank, input_columns, batched, batch_size, drop_last_batch, remove_columns, keep_in_memory, load_from_cache_file, cache_file_names, writer_batch_size, features, disable_nullable, fn_kwargs, num_proc, desc)\u001B[0m\n\u001B[0;32m    865\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m cache_file_names \u001B[38;5;129;01mis\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m:\n\u001B[0;32m    866\u001B[0m     cache_file_names \u001B[38;5;241m=\u001B[39m {k: \u001B[38;5;28;01mNone\u001B[39;00m \u001B[38;5;28;01mfor\u001B[39;00m k \u001B[38;5;129;01min\u001B[39;00m \u001B[38;5;28mself\u001B[39m}\n\u001B[0;32m    867\u001B[0m \u001B[38;5;28;01mreturn\u001B[39;00m DatasetDict(\n\u001B[1;32m--&gt; 868\u001B[0m     {\n\u001B[0;32m    869\u001B[0m         k: dataset\u001B[38;5;241m.\u001B[39mmap(\n\u001B[0;32m    870\u001B[0m             function\u001B[38;5;241m=\u001B[39mfunction,\n\u001B[0;32m    871\u001B[0m             with_indices\u001B[38;5;241m=\u001B[39mwith_indices,\n\u001B[0;32m    872\u001B[0m             with_rank\u001B[38;5;241m=\u001B[39mwith_rank,\n\u001B[0;32m    873\u001B[0m             input_columns\u001B[38;5;241m=\u001B[39minput_columns,\n\u001B[0;32m    874\u001B[0m             batched\u001B[38;5;241m=\u001B[39mbatched,\n\u001B[0;32m    875\u001B[0m             batch_size\u001B[38;5;241m=\u001B[39mbatch_size,\n\u001B[0;32m    876\u001B[0m             drop_last_batch\u001B[38;5;241m=\u001B[39mdrop_last_batch,\n\u001B[0;32m    877\u001B[0m             remove_columns\u001B[38;5;241m=\u001B[39mremove_columns,\n\u001B[0;32m    878\u001B[0m             keep_in_memory\u001B[38;5;241m=\u001B[39mkeep_in_memory,\n\u001B[0;32m    879\u001B[0m             load_from_cache_file\u001B[38;5;241m=\u001B[39mload_from_cache_file,\n\u001B[0;32m    880\u001B[0m             cache_file_name\u001B[38;5;241m=\u001B[39mcache_file_names[k],\n\u001B[0;32m    881\u001B[0m             writer_batch_size\u001B[38;5;241m=\u001B[39mwriter_batch_size,\n\u001B[0;32m    882\u001B[0m             features\u001B[38;5;241m=\u001B[39mfeatures,\n\u001B[0;32m    883\u001B[0m             disable_nullable\u001B[38;5;241m=\u001B[39mdisable_nullable,\n\u001B[0;32m    884\u001B[0m             fn_kwargs\u001B[38;5;241m=\u001B[39mfn_kwargs,\n\u001B[0;32m    885\u001B[0m             num_proc\u001B[38;5;241m=\u001B[39mnum_proc,\n\u001B[0;32m    886\u001B[0m             desc\u001B[38;5;241m=\u001B[39mdesc,\n\u001B[0;32m    887\u001B[0m         )\n\u001B[0;32m    888\u001B[0m         \u001B[38;5;28;01mfor\u001B[39;00m k, dataset \u001B[38;5;129;01min\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mitems()\n\u001B[0;32m    889\u001B[0m     }\n\u001B[0;32m    890\u001B[0m )\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\datasets\\dataset_dict.py:869\u001B[0m, in \u001B[0;36m&lt;dictcomp&gt;\u001B[1;34m(.0)\u001B[0m\n\u001B[0;32m    865\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m cache_file_names \u001B[38;5;129;01mis\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m:\n\u001B[0;32m    866\u001B[0m     cache_file_names \u001B[38;5;241m=\u001B[39m {k: \u001B[38;5;28;01mNone\u001B[39;00m \u001B[38;5;28;01mfor\u001B[39;00m k \u001B[38;5;129;01min\u001B[39;00m \u001B[38;5;28mself\u001B[39m}\n\u001B[0;32m    867\u001B[0m \u001B[38;5;28;01mreturn\u001B[39;00m DatasetDict(\n\u001B[0;32m    868\u001B[0m     {\n\u001B[1;32m--&gt; 869\u001B[0m         k: \u001B[43mdataset\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mmap\u001B[49m\u001B[43m(\u001B[49m\n\u001B[0;32m    870\u001B[0m \u001B[43m            \u001B[49m\u001B[43mfunction\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mfunction\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    871\u001B[0m \u001B[43m            \u001B[49m\u001B[43mwith_indices\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mwith_indices\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    872\u001B[0m \u001B[43m            \u001B[49m\u001B[43mwith_rank\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mwith_rank\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    873\u001B[0m \u001B[43m            \u001B[49m\u001B[43minput_columns\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43minput_columns\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    874\u001B[0m \u001B[43m            \u001B[49m\u001B[43mbatched\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mbatched\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    875\u001B[0m \u001B[43m            \u001B[49m\u001B[43mbatch_size\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mbatch_size\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    876\u001B[0m \u001B[43m            \u001B[49m\u001B[43mdrop_last_batch\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mdrop_last_batch\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    877\u001B[0m \u001B[43m            \u001B[49m\u001B[43mremove_columns\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mremove_columns\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    878\u001B[0m \u001B[43m            \u001B[49m\u001B[43mkeep_in_memory\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mkeep_in_memory\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    879\u001B[0m \u001B[43m            \u001B[49m\u001B[43mload_from_cache_file\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mload_from_cache_file\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    880\u001B[0m \u001B[43m            \u001B[49m\u001B[43mcache_file_name\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mcache_file_names\u001B[49m\u001B[43m[\u001B[49m\u001B[43mk\u001B[49m\u001B[43m]\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    881\u001B[0m \u001B[43m            \u001B[49m\u001B[43mwriter_batch_size\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mwriter_batch_size\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    882\u001B[0m \u001B[43m            \u001B[49m\u001B[43mfeatures\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mfeatures\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    883\u001B[0m \u001B[43m            \u001B[49m\u001B[43mdisable_nullable\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mdisable_nullable\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    884\u001B[0m \u001B[43m            \u001B[49m\u001B[43mfn_kwargs\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mfn_kwargs\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    885\u001B[0m \u001B[43m            \u001B[49m\u001B[43mnum_proc\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mnum_proc\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    886\u001B[0m \u001B[43m            \u001B[49m\u001B[43mdesc\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mdesc\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    887\u001B[0m \u001B[43m        \u001B[49m\u001B[43m)\u001B[49m\n\u001B[0;32m    888\u001B[0m         \u001B[38;5;28;01mfor\u001B[39;00m k, dataset \u001B[38;5;129;01min\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mitems()\n\u001B[0;32m    889\u001B[0m     }\n\u001B[0;32m    890\u001B[0m )\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\datasets\\arrow_dataset.py:593\u001B[0m, in \u001B[0;36mtransmit_tasks.&lt;locals&gt;.wrapper\u001B[1;34m(*args, **kwargs)\u001B[0m\n\u001B[0;32m    591\u001B[0m     \u001B[38;5;28mself\u001B[39m: \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mDataset\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m \u001B[38;5;241m=\u001B[39m kwargs\u001B[38;5;241m.\u001B[39mpop(\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mself\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m)\n\u001B[0;32m    592\u001B[0m \u001B[38;5;66;03m# apply actual function\u001B[39;00m\n\u001B[1;32m--&gt; 593\u001B[0m out: Union[\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mDataset\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m, \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mDatasetDict\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m] \u001B[38;5;241m=\u001B[39m func(\u001B[38;5;28mself\u001B[39m, \u001B[38;5;241m*\u001B[39margs, \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs)\n\u001B[0;32m    594\u001B[0m datasets: List[\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mDataset\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m] \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mlist\u001B[39m(out\u001B[38;5;241m.\u001B[39mvalues()) \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;28misinstance\u001B[39m(out, \u001B[38;5;28mdict\u001B[39m) \u001B[38;5;28;01melse\u001B[39;00m [out]\n\u001B[0;32m    595\u001B[0m \u001B[38;5;28;01mfor\u001B[39;00m dataset \u001B[38;5;129;01min\u001B[39;00m datasets:\n\u001B[0;32m    596\u001B[0m     \u001B[38;5;66;03m# Remove task templates if a column mapping of the template is no longer valid\u001B[39;00m\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\datasets\\arrow_dataset.py:558\u001B[0m, in \u001B[0;36mtransmit_format.&lt;locals&gt;.wrapper\u001B[1;34m(*args, **kwargs)\u001B[0m\n\u001B[0;32m    551\u001B[0m self_format \u001B[38;5;241m=\u001B[39m {\n\u001B[0;32m    552\u001B[0m     \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mtype\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m: \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_format_type,\n\u001B[0;32m    553\u001B[0m     \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mformat_kwargs\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m: \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_format_kwargs,\n\u001B[0;32m    554\u001B[0m     \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mcolumns\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m: \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_format_columns,\n\u001B[0;32m    555\u001B[0m     \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124moutput_all_columns\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m: \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_output_all_columns,\n\u001B[0;32m    556\u001B[0m }\n\u001B[0;32m    557\u001B[0m \u001B[38;5;66;03m# apply actual function\u001B[39;00m\n\u001B[1;32m--&gt; 558\u001B[0m out: Union[\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mDataset\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m, \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mDatasetDict\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m] \u001B[38;5;241m=\u001B[39m func(\u001B[38;5;28mself\u001B[39m, \u001B[38;5;241m*\u001B[39margs, \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs)\n\u001B[0;32m    559\u001B[0m datasets: List[\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mDataset\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m] \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mlist\u001B[39m(out\u001B[38;5;241m.\u001B[39mvalues()) \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;28misinstance\u001B[39m(out, \u001B[38;5;28mdict\u001B[39m) \u001B[38;5;28;01melse\u001B[39;00m [out]\n\u001B[0;32m    560\u001B[0m \u001B[38;5;66;03m# re-apply format to the output\u001B[39;00m\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\datasets\\arrow_dataset.py:3105\u001B[0m, in \u001B[0;36mDataset.map\u001B[1;34m(self, function, with_indices, with_rank, input_columns, batched, batch_size, drop_last_batch, remove_columns, keep_in_memory, load_from_cache_file, cache_file_name, writer_batch_size, features, disable_nullable, fn_kwargs, num_proc, suffix_template, new_fingerprint, desc)\u001B[0m\n\u001B[0;32m   3099\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m transformed_dataset \u001B[38;5;129;01mis\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m:\n\u001B[0;32m   3100\u001B[0m     \u001B[38;5;28;01mwith\u001B[39;00m hf_tqdm(\n\u001B[0;32m   3101\u001B[0m         unit\u001B[38;5;241m=\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124m examples\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m,\n\u001B[0;32m   3102\u001B[0m         total\u001B[38;5;241m=\u001B[39mpbar_total,\n\u001B[0;32m   3103\u001B[0m         desc\u001B[38;5;241m=\u001B[39mdesc \u001B[38;5;129;01mor\u001B[39;00m \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mMap\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m,\n\u001B[0;32m   3104\u001B[0m     ) \u001B[38;5;28;01mas\u001B[39;00m pbar:\n\u001B[1;32m-&gt; 3105\u001B[0m         \u001B[38;5;28;01mfor\u001B[39;00m rank, done, content \u001B[38;5;129;01min\u001B[39;00m Dataset\u001B[38;5;241m.\u001B[39m_map_single(\u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mdataset_kwargs):\n\u001B[0;32m   3106\u001B[0m             \u001B[38;5;28;01mif\u001B[39;00m done:\n\u001B[0;32m   3107\u001B[0m                 shards_done \u001B[38;5;241m+\u001B[39m\u001B[38;5;241m=\u001B[39m \u001B[38;5;241m1\u001B[39m\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\datasets\\arrow_dataset.py:3482\u001B[0m, in \u001B[0;36mDataset._map_single\u001B[1;34m(shard, function, with_indices, with_rank, input_columns, batched, batch_size, drop_last_batch, remove_columns, keep_in_memory, cache_file_name, writer_batch_size, features, disable_nullable, fn_kwargs, new_fingerprint, rank, offset)\u001B[0m\n\u001B[0;32m   3478\u001B[0m indices \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mlist\u001B[39m(\n\u001B[0;32m   3479\u001B[0m     \u001B[38;5;28mrange\u001B[39m(\u001B[38;5;241m*\u001B[39m(\u001B[38;5;28mslice\u001B[39m(i, i \u001B[38;5;241m+\u001B[39m batch_size)\u001B[38;5;241m.\u001B[39mindices(shard\u001B[38;5;241m.\u001B[39mnum_rows)))\n\u001B[0;32m   3480\u001B[0m )  \u001B[38;5;66;03m# Something simpler?\u001B[39;00m\n\u001B[0;32m   3481\u001B[0m \u001B[38;5;28;01mtry\u001B[39;00m:\n\u001B[1;32m-&gt; 3482\u001B[0m     batch \u001B[38;5;241m=\u001B[39m \u001B[43mapply_function_on_filtered_inputs\u001B[49m\u001B[43m(\u001B[49m\n\u001B[0;32m   3483\u001B[0m \u001B[43m        \u001B[49m\u001B[43mbatch\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m   3484\u001B[0m \u001B[43m        \u001B[49m\u001B[43mindices\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m   3485\u001B[0m \u001B[43m        \u001B[49m\u001B[43mcheck_same_num_examples\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[38;5;28;43mlen\u001B[39;49m\u001B[43m(\u001B[49m\u001B[43mshard\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mlist_indexes\u001B[49m\u001B[43m(\u001B[49m\u001B[43m)\u001B[49m\u001B[43m)\u001B[49m\u001B[43m \u001B[49m\u001B[38;5;241;43m&gt;\u001B[39;49m\u001B[43m \u001B[49m\u001B[38;5;241;43m0\u001B[39;49m\u001B[43m,\u001B[49m\n\u001B[0;32m   3486\u001B[0m \u001B[43m        \u001B[49m\u001B[43moffset\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43moffset\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m   3487\u001B[0m \u001B[43m    \u001B[49m\u001B[43m)\u001B[49m\n\u001B[0;32m   3488\u001B[0m \u001B[38;5;28;01mexcept\u001B[39;00m NumExamplesMismatchError:\n\u001B[0;32m   3489\u001B[0m     \u001B[38;5;28;01mraise\u001B[39;00m DatasetTransformationNotAllowedError(\n\u001B[0;32m   3490\u001B[0m         \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mUsing `.map` in batched mode on a dataset with attached indexes is allowed only if it doesn\u001B[39m\u001B[38;5;124m'\u001B[39m\u001B[38;5;124mt create or remove existing examples. You can first run `.drop_index() to remove your index and then re-add it.\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m\n\u001B[0;32m   3491\u001B[0m     ) \u001B[38;5;28;01mfrom\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\datasets\\arrow_dataset.py:3361\u001B[0m, in \u001B[0;36mDataset._map_single.&lt;locals&gt;.apply_function_on_filtered_inputs\u001B[1;34m(pa_inputs, indices, check_same_num_examples, offset)\u001B[0m\n\u001B[0;32m   3359\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m with_rank:\n\u001B[0;32m   3360\u001B[0m     additional_args \u001B[38;5;241m+\u001B[39m\u001B[38;5;241m=\u001B[39m (rank,)\n\u001B[1;32m-&gt; 3361\u001B[0m processed_inputs \u001B[38;5;241m=\u001B[39m function(\u001B[38;5;241m*\u001B[39mfn_args, \u001B[38;5;241m*\u001B[39madditional_args, \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mfn_kwargs)\n\u001B[0;32m   3362\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;28misinstance\u001B[39m(processed_inputs, LazyDict):\n\u001B[0;32m   3363\u001B[0m     processed_inputs \u001B[38;5;241m=\u001B[39m {\n\u001B[0;32m   3364\u001B[0m         k: v \u001B[38;5;28;01mfor\u001B[39;00m k, v \u001B[38;5;129;01min\u001B[39;00m processed_inputs\u001B[38;5;241m.\u001B[39mdata\u001B[38;5;241m.\u001B[39mitems() \u001B[38;5;28;01mif\u001B[39;00m k \u001B[38;5;129;01mnot\u001B[39;00m \u001B[38;5;129;01min\u001B[39;00m processed_inputs\u001B[38;5;241m.\u001B[39mkeys_to_format\n\u001B[0;32m   3365\u001B[0m     }\n&quot;, 
+      &quot;Cell \u001B[1;32mIn[5], line 3\u001B[0m, in \u001B[0;36mprocess_func\u001B[1;34m(examples)\u001B[0m\n\u001B[0;32m      1\u001B[0m \u001B[38;5;28;01mdef\u001B[39;00m \u001B[38;5;21mprocess_func\u001B[39m(examples):\n\u001B[0;32m      2\u001B[0m     contents \u001B[38;5;241m=\u001B[39m [\u001B[38;5;124m'\u001B[39m\u001B[38;5;124mGenerate summary: \u001B[39m\u001B[38;5;130;01m\\n\u001B[39;00m\u001B[38;5;124m'\u001B[39m \u001B[38;5;241m+\u001B[39m e \u001B[38;5;28;01mfor\u001B[39;00m e \u001B[38;5;129;01min\u001B[39;00m examples[\u001B[38;5;124m'\u001B[39m\u001B[38;5;124marticle\u001B[39m\u001B[38;5;124m'\u001B[39m]]\n\u001B[1;32m----&gt; 3\u001B[0m     inputs \u001B[38;5;241m=\u001B[39m \u001B[43mtokenizer\u001B[49m\u001B[43m(\u001B[49m\u001B[43mcontents\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mmax_length\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[38;5;241;43m1024\u001B[39;49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mtruncation\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[38;5;28;43;01mTrue\u001B[39;49;00m\u001B[43m)\u001B[49m\n\u001B[0;32m      4\u001B[0m     labels \u001B[38;5;241m=\u001B[39m tokenizer(text_target\u001B[38;5;241m=\u001B[39mexamples[\u001B[38;5;124m'\u001B[39m\u001B[38;5;124mhighlights\u001B[39m\u001B[38;5;124m'\u001B[39m], max_length\u001B[38;5;241m=\u001B[39m\u001B[38;5;241m64\u001B[39m, truncation\u001B[38;5;241m=\u001B[39m\u001B[38;5;28;01mTrue\u001B[39;00m)\n\u001B[0;32m      5\u001B[0m     inputs[\u001B[38;5;124m'\u001B[39m\u001B[38;5;124mlabels\u001B[39m\u001B[38;5;124m'\u001B[39m] \u001B[38;5;241m=\u001B[39m labels[\u001B[38;5;124m'\u001B[39m\u001B[38;5;124minput_ids\u001B[39m\u001B[38;5;124m'\u001B[39m]\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\tokenization_utils_base.py:2872\u001B[0m, in \u001B[0;36mPreTrainedTokenizerBase.__call__\u001B[1;34m(self, text, text_pair, text_target, text_pair_target, add_special_tokens, padding, truncation, max_length, stride, is_split_into_words, pad_to_multiple_of, return_tensors, return_token_type_ids, return_attention_mask, return_overflowing_tokens, return_special_tokens_mask, return_offsets_mapping, return_length, verbose, **kwargs)\u001B[0m\n\u001B[0;32m   2870\u001B[0m     \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;129;01mnot\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_in_target_context_manager:\n\u001B[0;32m   2871\u001B[0m         \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_switch_to_input_mode()\n\u001B[1;32m-&gt; 2872\u001B[0m     encodings \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_call_one(text\u001B[38;5;241m=\u001B[39mtext, text_pair\u001B[38;5;241m=\u001B[39mtext_pair, \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mall_kwargs)\n\u001B[0;32m   2873\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m text_target \u001B[38;5;129;01mis\u001B[39;00m \u001B[38;5;129;01mnot\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m:\n\u001B[0;32m   2874\u001B[0m     \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_switch_to_target_mode()\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\tokenization_utils_base.py:2958\u001B[0m, in \u001B[0;36mPreTrainedTokenizerBase._call_one\u001B[1;34m(self, text, text_pair, add_special_tokens, padding, truncation, max_length, stride, is_split_into_words, pad_to_multiple_of, return_tensors, return_token_type_ids, return_attention_mask, return_overflowing_tokens, return_special_tokens_mask, return_offsets_mapping, return_length, verbose, **kwargs)\u001B[0m\n\u001B[0;32m   2953\u001B[0m         \u001B[38;5;28;01mraise\u001B[39;00m \u001B[38;5;167;01mValueError\u001B[39;00m(\n\u001B[0;32m   2954\u001B[0m             \u001B[38;5;124mf\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124mbatch length of `text`: \u001B[39m\u001B[38;5;132;01m{\u001B[39;00m\u001B[38;5;28mlen\u001B[39m(text)\u001B[38;5;132;01m}\u001B[39;00m\u001B[38;5;124m does not match batch length of `text_pair`:\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m\n\u001B[0;32m   2955\u001B[0m             \u001B[38;5;124mf\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124m \u001B[39m\u001B[38;5;132;01m{\u001B[39;00m\u001B[38;5;28mlen\u001B[39m(text_pair)\u001B[38;5;132;01m}\u001B[39;00m\u001B[38;5;124m.\u001B[39m\u001B[38;5;124m\&quot;\u001B[39m\n\u001B[0;32m   2956\u001B[0m         )\n\u001B[0;32m   2957\u001B[0m     batch_text_or_text_pairs \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mlist\u001B[39m(\u001B[38;5;28mzip\u001B[39m(text, text_pair)) \u001B[38;5;28;01mif\u001B[39;00m text_pair \u001B[38;5;129;01mis\u001B[39;00m \u001B[38;5;129;01mnot\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m \u001B[38;5;28;01melse\u001B[39;00m text\n\u001B[1;32m-&gt; 2958\u001B[0m     \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mbatch_encode_plus(\n\u001B[0;32m   2959\u001B[0m         batch_text_or_text_pairs\u001B[38;5;241m=\u001B[39mbatch_text_or_text_pairs,\n\u001B[0;32m   2960\u001B[0m         add_special_tokens\u001B[38;5;241m=\u001B[39madd_special_tokens,\n\u001B[0;32m   2961\u001B[0m         padding\u001B[38;5;241m=\u001B[39mpadding,\n\u001B[0;32m   2962\u001B[0m         truncation\u001B[38;5;241m=\u001B[39mtruncation,\n\u001B[0;32m   2963\u001B[0m         max_length\u001B[38;5;241m=\u001B[39mmax_length,\n\u001B[0;32m   2964\u001B[0m         stride\u001B[38;5;241m=\u001B[39mstride,\n\u001B[0;32m   2965\u001B[0m         is_split_into_words\u001B[38;5;241m=\u001B[39mis_split_into_words,\n\u001B[0;32m   2966\u001B[0m         pad_to_multiple_of\u001B[38;5;241m=\u001B[39mpad_to_multiple_of,\n\u001B[0;32m   2967\u001B[0m         return_tensors\u001B[38;5;241m=\u001B[39mreturn_tensors,\n\u001B[0;32m   2968\u001B[0m         return_token_type_ids\u001B[38;5;241m=\u001B[39mreturn_token_type_ids,\n\u001B[0;32m   2969\u001B[0m         return_attention_mask\u001B[38;5;241m=\u001B[39mreturn_attention_mask,\n\u001B[0;32m   2970\u001B[0m         return_overflowing_tokens\u001B[38;5;241m=\u001B[39mreturn_overflowing_tokens,\n\u001B[0;32m   2971\u001B[0m         return_special_tokens_mask\u001B[38;5;241m=\u001B[39mreturn_special_tokens_mask,\n\u001B[0;32m   2972\u001B[0m         return_offsets_mapping\u001B[38;5;241m=\u001B[39mreturn_offsets_mapping,\n\u001B[0;32m   2973\u001B[0m         return_length\u001B[38;5;241m=\u001B[39mreturn_length,\n\u001B[0;32m   2974\u001B[0m         verbose\u001B[38;5;241m=\u001B[39mverbose,\n\u001B[0;32m   2975\u001B[0m         \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs,\n\u001B[0;32m   2976\u001B[0m     )\n\u001B[0;32m   2977\u001B[0m \u001B[38;5;28;01melse\u001B[39;00m:\n\u001B[0;32m   2978\u001B[0m     \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mencode_plus(\n\u001B[0;32m   2979\u001B[0m         text\u001B[38;5;241m=\u001B[39mtext,\n\u001B[0;32m   2980\u001B[0m         text_pair\u001B[38;5;241m=\u001B[39mtext_pair,\n\u001B[1;32m   (...)\u001B[0m\n\u001B[0;32m   2996\u001B[0m         \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs,\n\u001B[0;32m   2997\u001B[0m     )\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\tokenization_utils_base.py:3149\u001B[0m, in \u001B[0;36mPreTrainedTokenizerBase.batch_encode_plus\u001B[1;34m(self, batch_text_or_text_pairs, add_special_tokens, padding, truncation, max_length, stride, is_split_into_words, pad_to_multiple_of, return_tensors, return_token_type_ids, return_attention_mask, return_overflowing_tokens, return_special_tokens_mask, return_offsets_mapping, return_length, verbose, **kwargs)\u001B[0m\n\u001B[0;32m   3139\u001B[0m \u001B[38;5;66;03m# Backward compatibility for 'truncation_strategy', 'pad_to_max_length'\u001B[39;00m\n\u001B[0;32m   3140\u001B[0m padding_strategy, truncation_strategy, max_length, kwargs \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_get_padding_truncation_strategies(\n\u001B[0;32m   3141\u001B[0m     padding\u001B[38;5;241m=\u001B[39mpadding,\n\u001B[0;32m   3142\u001B[0m     truncation\u001B[38;5;241m=\u001B[39mtruncation,\n\u001B[1;32m   (...)\u001B[0m\n\u001B[0;32m   3146\u001B[0m     \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs,\n\u001B[0;32m   3147\u001B[0m )\n\u001B[1;32m-&gt; 3149\u001B[0m \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_batch_encode_plus(\n\u001B[0;32m   3150\u001B[0m     batch_text_or_text_pairs\u001B[38;5;241m=\u001B[39mbatch_text_or_text_pairs,\n\u001B[0;32m   3151\u001B[0m     add_special_tokens\u001B[38;5;241m=\u001B[39madd_special_tokens,\n\u001B[0;32m   3152\u001B[0m     padding_strategy\u001B[38;5;241m=\u001B[39mpadding_strategy,\n\u001B[0;32m   3153\u001B[0m     truncation_strategy\u001B[38;5;241m=\u001B[39mtruncation_strategy,\n\u001B[0;32m   3154\u001B[0m     max_length\u001B[38;5;241m=\u001B[39mmax_length,\n\u001B[0;32m   3155\u001B[0m     stride\u001B[38;5;241m=\u001B[39mstride,\n\u001B[0;32m   3156\u001B[0m     is_split_into_words\u001B[38;5;241m=\u001B[39mis_split_into_words,\n\u001B[0;32m   3157\u001B[0m     pad_to_multiple_of\u001B[38;5;241m=\u001B[39mpad_to_multiple_of,\n\u001B[0;32m   3158\u001B[0m     return_tensors\u001B[38;5;241m=\u001B[39mreturn_tensors,\n\u001B[0;32m   3159\u001B[0m     return_token_type_ids\u001B[38;5;241m=\u001B[39mreturn_token_type_ids,\n\u001B[0;32m   3160\u001B[0m     return_attention_mask\u001B[38;5;241m=\u001B[39mreturn_attention_mask,\n\u001B[0;32m   3161\u001B[0m     return_overflowing_tokens\u001B[38;5;241m=\u001B[39mreturn_overflowing_tokens,\n\u001B[0;32m   3162\u001B[0m     return_special_tokens_mask\u001B[38;5;241m=\u001B[39mreturn_special_tokens_mask,\n\u001B[0;32m   3163\u001B[0m     return_offsets_mapping\u001B[38;5;241m=\u001B[39mreturn_offsets_mapping,\n\u001B[0;32m   3164\u001B[0m     return_length\u001B[38;5;241m=\u001B[39mreturn_length,\n\u001B[0;32m   3165\u001B[0m     verbose\u001B[38;5;241m=\u001B[39mverbose,\n\u001B[0;32m   3166\u001B[0m     \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs,\n\u001B[0;32m   3167\u001B[0m )\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\tokenization_utils.py:803\u001B[0m, in \u001B[0;36mPreTrainedTokenizer._batch_encode_plus\u001B[1;34m(self, batch_text_or_text_pairs, add_special_tokens, padding_strategy, truncation_strategy, max_length, stride, is_split_into_words, pad_to_multiple_of, return_tensors, return_token_type_ids, return_attention_mask, return_overflowing_tokens, return_special_tokens_mask, return_offsets_mapping, return_length, verbose, **kwargs)\u001B[0m\n\u001B[0;32m    800\u001B[0m \u001B[38;5;28;01melse\u001B[39;00m:\n\u001B[0;32m    801\u001B[0m     ids, pair_ids \u001B[38;5;241m=\u001B[39m ids_or_pair_ids\n\u001B[1;32m--&gt; 803\u001B[0m first_ids \u001B[38;5;241m=\u001B[39m \u001B[43mget_input_ids\u001B[49m\u001B[43m(\u001B[49m\u001B[43mids\u001B[49m\u001B[43m)\u001B[49m\n\u001B[0;32m    804\u001B[0m second_ids \u001B[38;5;241m=\u001B[39m get_input_ids(pair_ids) \u001B[38;5;28;01mif\u001B[39;00m pair_ids \u001B[38;5;129;01mis\u001B[39;00m \u001B[38;5;129;01mnot\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m \u001B[38;5;28;01melse\u001B[39;00m \u001B[38;5;28;01mNone\u001B[39;00m\n\u001B[0;32m    805\u001B[0m input_ids\u001B[38;5;241m.\u001B[39mappend((first_ids, second_ids))\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\tokenization_utils.py:770\u001B[0m, in \u001B[0;36mPreTrainedTokenizer._batch_encode_plus.&lt;locals&gt;.get_input_ids\u001B[1;34m(text)\u001B[0m\n\u001B[0;32m    768\u001B[0m \u001B[38;5;28;01mdef\u001B[39;00m \u001B[38;5;21mget_input_ids\u001B[39m(text):\n\u001B[0;32m    769\u001B[0m     \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;28misinstance\u001B[39m(text, \u001B[38;5;28mstr\u001B[39m):\n\u001B[1;32m--&gt; 770\u001B[0m         tokens \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mtokenize(text, \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs)\n\u001B[0;32m    771\u001B[0m         \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mconvert_tokens_to_ids(tokens)\n\u001B[0;32m    772\u001B[0m     \u001B[38;5;28;01melif\u001B[39;00m \u001B[38;5;28misinstance\u001B[39m(text, (\u001B[38;5;28mlist\u001B[39m, \u001B[38;5;28mtuple\u001B[39m)) \u001B[38;5;129;01mand\u001B[39;00m \u001B[38;5;28mlen\u001B[39m(text) \u001B[38;5;241m&gt;\u001B[39m \u001B[38;5;241m0\u001B[39m \u001B[38;5;129;01mand\u001B[39;00m \u001B[38;5;28misinstance\u001B[39m(text[\u001B[38;5;241m0\u001B[39m], \u001B[38;5;28mstr\u001B[39m):\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\models\\t5\\tokenization_t5.py:386\u001B[0m, in \u001B[0;36mT5Tokenizer.tokenize\u001B[1;34m(self, text, **kwargs)\u001B[0m\n\u001B[0;32m    381\u001B[0m \u001B[38;5;250m\u001B[39m\u001B[38;5;124;03m\&quot;\&quot;\&quot;\u001B[39;00m\n\u001B[0;32m    382\u001B[0m \u001B[38;5;124;03mConverts a string to a list of tokens. If `self.legacy` is set to `False`, a prefix token is added unless the\u001B[39;00m\n\u001B[0;32m    383\u001B[0m \u001B[38;5;124;03mfirst token is special.\u001B[39;00m\n\u001B[0;32m    384\u001B[0m \u001B[38;5;124;03m\&quot;\&quot;\&quot;\u001B[39;00m\n\u001B[0;32m    385\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mlegacy \u001B[38;5;129;01mor\u001B[39;00m \u001B[38;5;28mlen\u001B[39m(text) \u001B[38;5;241m==\u001B[39m \u001B[38;5;241m0\u001B[39m:\n\u001B[1;32m--&gt; 386\u001B[0m     \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28msuper\u001B[39m()\u001B[38;5;241m.\u001B[39mtokenize(text, \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs)\n\u001B[0;32m    388\u001B[0m text \u001B[38;5;241m=\u001B[39m text\u001B[38;5;241m.\u001B[39mreplace(SPIECE_UNDERLINE, \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124m \u001B[39m\u001B[38;5;124m\&quot;\u001B[39m)\n\u001B[0;32m    389\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39madd_prefix_space:\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\tokenization_utils.py:617\u001B[0m, in \u001B[0;36mPreTrainedTokenizer.tokenize\u001B[1;34m(self, text, **kwargs)\u001B[0m\n\u001B[0;32m    615\u001B[0m         tokenized_text\u001B[38;5;241m.\u001B[39mappend(token)\n\u001B[0;32m    616\u001B[0m     \u001B[38;5;28;01melse\u001B[39;00m:\n\u001B[1;32m--&gt; 617\u001B[0m         tokenized_text\u001B[38;5;241m.\u001B[39mextend(\u001B[38;5;28;43mself\u001B[39;49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43m_tokenize\u001B[49m\u001B[43m(\u001B[49m\u001B[43mtoken\u001B[49m\u001B[43m)\u001B[49m)\n\u001B[0;32m    618\u001B[0m \u001B[38;5;66;03m# [\&quot;This\&quot;, \&quot; is\&quot;, \&quot; something\&quot;, \&quot;&lt;special_token_1&gt;\&quot;, \&quot;else\&quot;]\u001B[39;00m\n\u001B[0;32m    619\u001B[0m \u001B[38;5;28;01mreturn\u001B[39;00m tokenized_text\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\models\\t5\\tokenization_t5.py:412\u001B[0m, in \u001B[0;36mT5Tokenizer._tokenize\u001B[1;34m(self, text, **kwargs)\u001B[0m\n\u001B[0;32m    402\u001B[0m \u001B[38;5;28;01mdef\u001B[39;00m \u001B[38;5;21m_tokenize\u001B[39m(\u001B[38;5;28mself\u001B[39m, text, \u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs):\n\u001B[0;32m    403\u001B[0m \u001B[38;5;250m    \u001B[39m\u001B[38;5;124;03m\&quot;\&quot;\&quot;\u001B[39;00m\n\u001B[0;32m    404\u001B[0m \u001B[38;5;124;03m    Returns a tokenized string.\u001B[39;00m\n\u001B[0;32m    405\u001B[0m \n\u001B[1;32m   (...)\u001B[0m\n\u001B[0;32m    410\u001B[0m \u001B[38;5;124;03m    `self.tokenizer.sp_model.encode(\&quot;&lt;unk&gt; Hey\&quot;, out_type = str)[4:]`.\u001B[39;00m\n\u001B[0;32m    411\u001B[0m \u001B[38;5;124;03m    \&quot;\&quot;\&quot;\u001B[39;00m\n\u001B[1;32m--&gt; 412\u001B[0m     tokens \u001B[38;5;241m=\u001B[39m \u001B[38;5;28;43mself\u001B[39;49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43msp_model\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mencode\u001B[49m\u001B[43m(\u001B[49m\u001B[43mtext\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mout_type\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[38;5;28;43mstr\u001B[39;49m\u001B[43m)\u001B[49m\n\u001B[0;32m    413\u001B[0m     \u001B[38;5;28;01mif\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mlegacy \u001B[38;5;129;01mor\u001B[39;00m \u001B[38;5;129;01mnot\u001B[39;00m text\u001B[38;5;241m.\u001B[39mstartswith((SPIECE_UNDERLINE, \u001B[38;5;124m\&quot;\u001B[39m\u001B[38;5;124m \u001B[39m\u001B[38;5;124m\&quot;\u001B[39m)):\n\u001B[0;32m    414\u001B[0m         \u001B[38;5;28;01mreturn\u001B[39;00m tokens\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\sentencepiece\\__init__.py:552\u001B[0m, in \u001B[0;36mSentencePieceProcessor.Encode\u001B[1;34m(self, input, out_type, add_bos, add_eos, reverse, emit_unk_piece, enable_sampling, nbest_size, alpha, num_threads)\u001B[0m\n\u001B[0;32m    549\u001B[0m   \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_EncodeAsIds(\u001B[38;5;28minput\u001B[39m, enable_sampling, nbest_size,\n\u001B[0;32m    550\u001B[0m                            alpha, add_bos, add_eos, reverse, emit_unk_piece)\n\u001B[0;32m    551\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m out_type \u001B[38;5;129;01mis\u001B[39;00m \u001B[38;5;28mstr\u001B[39m:\n\u001B[1;32m--&gt; 552\u001B[0m   \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28;43mself\u001B[39;49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43m_EncodeAsPieces\u001B[49m\u001B[43m(\u001B[49m\u001B[38;5;28;43minput\u001B[39;49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43menable_sampling\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mnbest_size\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    553\u001B[0m \u001B[43m                              \u001B[49m\u001B[43malpha\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43madd_bos\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43madd_eos\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mreverse\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43memit_unk_piece\u001B[49m\u001B[43m)\u001B[49m\n\u001B[0;32m    554\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m out_type \u001B[38;5;241m==\u001B[39m \u001B[38;5;124m'\u001B[39m\u001B[38;5;124mserialized_proto\u001B[39m\u001B[38;5;124m'\u001B[39m \u001B[38;5;129;01mor\u001B[39;00m out_type \u001B[38;5;241m==\u001B[39m \u001B[38;5;124m'\u001B[39m\u001B[38;5;124mproto\u001B[39m\u001B[38;5;124m'\u001B[39m:\n\u001B[0;32m    555\u001B[0m   \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_EncodeAsSerializedProto(\u001B[38;5;28minput\u001B[39m, enable_sampling, nbest_size,\n\u001B[0;32m    556\u001B[0m                                        alpha, add_bos, add_eos, reverse, emit_unk_piece)\n&quot;, 
+      &quot;\u001B[1;31mKeyboardInterrupt\u001B[0m: &quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;tokenized_ds = ds.map(process_func, batched=True)\n&quot;, 
+    &quot;tokenizer.decode(tokenized_ds['train'][0]['input_ids'])&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:41:52.944652300Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:41:46.007109900Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;fb499d2839fa3ec6&quot;, 
+   &quot;execution_count&quot;: 34 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;'John and. Audrey Cook were discovered alongside their daughter, Maureen. They were found at Tremarle Home Park in Cornwall. Investigators say the three died of carbon monoxide. poisoning.&lt;/s&gt;'&quot; 
+     }, 
+     &quot;execution_count&quot;: 32, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;tokenizer.decode(tokenized_ds['train'][0]['labels'])&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:41:42.709734500Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:41:42.649730700Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;77ce9b5c74ac566c&quot;, 
+   &quot;execution_count&quot;: 32 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;'John and . Audrey Cook were discovered alongside their daughter, Maureen . They were found at Tremarle Home Park in Cornwall . Investigators say the three died of carbon monoxide . poisoning .'&quot; 
+     }, 
+     &quot;execution_count&quot;: 33, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;ds['train'][0]['highlights']&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:41:43.829823900Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:41:43.818824100Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;83cff0fa46afad97&quot;, 
+   &quot;execution_count&quot;: 33 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step4: Create model&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;30a3b2dfa1c26def&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;Model weights loaded...\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;#model = T5ForConditionalGeneration.from_pretrained(\&quot;google-t5/t5-small\&quot;, max_memory = 1024)\n&quot;, 
+    &quot;model = T5ForConditionalGeneration.from_pretrained(\&quot;./summary/last-checkpoint\&quot;, max_memory = 1024)\n&quot;, 
+    &quot;print(\&quot;Model weights loaded...\\n\&quot;)&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:42:53.147461300Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:42:47.505005200Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;df8cbb3530ed4dd7&quot;, 
+   &quot;execution_count&quot;: 36 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step5: Create evaluate function using rouge&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;194c68029ddc9234&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;import numpy as np\n&quot;, 
+    &quot;from rouge import Rouge\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;rouge = Rouge()\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;def compute_metric(evalPred):\n&quot;, 
+    &quot;    preds, labels = evalPred\n&quot;, 
+    &quot;    decode_preds = tokenizer.batch_decode(preds, skip_special_tokens=True)\n&quot;, 
+    &quot;    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)\n&quot;, 
+    &quot;    decode_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)\n&quot;, 
+    &quot;    decode_preds = [\&quot; \&quot;.join(p) for p in decode_preds]\n&quot;, 
+    &quot;    decode_labels = [\&quot; \&quot;.join(p) for p in decode_labels]\n&quot;, 
+    &quot;    scores = rouge.get_scores(decode_preds, decode_labels, avg=True)\n&quot;, 
+    &quot;    return {\n&quot;, 
+    &quot;        \&quot;rouge-1\&quot;: scores['rouge-1']['f'],\n&quot;, 
+    &quot;        \&quot;rouge-2\&quot;: scores['rouge-2']['f'],\n&quot;, 
+    &quot;        \&quot;rouge-l\&quot;: scores['rouge-l']['f']\n&quot;, 
+    &quot;    }&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:43:19.299563900Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:43:19.289563600Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;c6f8c053d20e2635&quot;, 
+   &quot;execution_count&quot;: 37 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step6: Set training parameters&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;b9016ef59e365488&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;args = Seq2SeqTrainingArguments(\n&quot;, 
+    &quot;    output_dir=\&quot;./summary\&quot;,\n&quot;, 
+    &quot;    learning_rate=1e-6,\n&quot;, 
+    &quot;    num_train_epochs=1,\n&quot;, 
+    &quot;    per_device_train_batch_size=8,\n&quot;, 
+    &quot;    per_device_eval_batch_size=8,\n&quot;, 
+    &quot;    gradient_accumulation_steps=8,\n&quot;, 
+    &quot;    warmup_steps=128,\n&quot;, 
+    &quot;    logging_steps=512,\n&quot;, 
+    &quot;    logging_dir=\&quot;./logging\&quot;,\n&quot;, 
+    &quot;    evaluation_strategy=\&quot;steps\&quot;,\n&quot;, 
+    &quot;    save_strategy=\&quot;steps\&quot;,\n&quot;, 
+    &quot;    save_steps=512,\n&quot;, 
+    &quot;    save_total_limit=5,     # save the last 5 model\n&quot;, 
+    &quot;    metric_for_best_model=\&quot;rouge-l\&quot;,\n&quot;, 
+    &quot;    predict_with_generate=True,  # must set True\n&quot;, 
+    &quot;    #load_best_model_at_end=True\n&quot;, 
+    &quot;)&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:43:20.754678300Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:43:20.629670200Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;aedf6018a569d31f&quot;, 
+   &quot;execution_count&quot;: 38 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step7: Create trainer&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;9812181388aa21ee&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;trainer = Seq2SeqTrainer(\n&quot;, 
+    &quot;    args=args,\n&quot;, 
+    &quot;    model=model,\n&quot;, 
+    &quot;    train_dataset=tokenized_ds['train'],\n&quot;, 
+    &quot;    eval_dataset=tokenized_ds['test'],\n&quot;, 
+    &quot;    compute_metrics=compute_metric,\n&quot;, 
+    &quot;    tokenizer=tokenizer,\n&quot;, 
+    &quot;    data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer),\n&quot;, 
+    &quot;)&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;71755c248c0bb41d&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step8: Train the model&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;3ff4ceb14886b129&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;&lt;IPython.core.display.HTML object&gt;&quot;, 
+      &quot;text/html&quot;: &quot;\n    &lt;div&gt;\n      \n      &lt;progress value='513' max='4486' style='width:300px; height:20px; vertical-align: middle;'&gt;&lt;/progress&gt;\n      [ 513/4486 31:13 &lt; 4:02:49, 0.27 it/s, Epoch 0.11/1]\n    &lt;/div&gt;\n    &lt;table border=\&quot;1\&quot; class=\&quot;dataframe\&quot;&gt;\n  &lt;thead&gt;\n &lt;tr style=\&quot;text-align: left;\&quot;&gt;\n      &lt;th&gt;Step&lt;/th&gt;\n      &lt;th&gt;Training Loss&lt;/th&gt;\n      &lt;th&gt;Validation Loss&lt;/th&gt;\n    &lt;/tr&gt;\n  &lt;/thead&gt;\n  &lt;tbody&gt;\n  &lt;/tbody&gt;\n&lt;/table&gt;&lt;p&gt;&quot; 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    }, 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;&lt;IPython.core.display.HTML object&gt;&quot;, 
+      &quot;text/html&quot;: &quot;\n    &lt;div&gt;\n      \n      &lt;progress value='513' max='4486' style='width:300px; height:20px; vertical-align: middle;'&gt;&lt;/progress&gt;\n      [ 513/4486 31:13 &lt; 4:02:49, 0.27 it/s, Epoch 0.11/1]\n    &lt;/div&gt;\n    &lt;table border=\&quot;1\&quot; class=\&quot;dataframe\&quot;&gt;\n  &lt;thead&gt;\n &lt;tr style=\&quot;text-align: left;\&quot;&gt;\n      &lt;th&gt;Step&lt;/th&gt;\n      &lt;th&gt;Training Loss&lt;/th&gt;\n      &lt;th&gt;Validation Loss&lt;/th&gt;\n      &lt;th&gt;Rouge-1&lt;/th&gt;\n      &lt;th&gt;Rouge-2&lt;/th&gt;\n      &lt;th&gt;Rouge-l&lt;/th&gt;\n    &lt;/tr&gt;\n  &lt;/thead&gt;\n  &lt;tbody&gt;\n    &lt;tr&gt;\n      &lt;td&gt;512&lt;/td&gt;\n      &lt;td&gt;1.696300&lt;/td&gt;\n      &lt;td&gt;1.619595&lt;/td&gt;\n      &lt;td&gt;0.773501&lt;/td&gt;\n      &lt;td&gt;0.415039&lt;/td&gt;\n      &lt;td&gt;0.694320&lt;/td&gt;\n    &lt;/tr&gt;\n  &lt;/tbody&gt;\n&lt;/table&gt;&lt;p&gt;&quot; 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    }, 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;&lt;IPython.core.display.HTML object&gt;&quot;, 
+      &quot;text/html&quot;: &quot;\n    &lt;div&gt;\n      \n      &lt;progress value='1025' max='4486' style='width:300px; height:20px; vertical-align: middle;'&gt;&lt;/progress&gt;\n      [1025/4486 1:17:12 &lt; 4:21:14, 0.22 it/s, Epoch 0.23/1]\n    &lt;/div&gt;\n    &lt;table border=\&quot;1\&quot; class=\&quot;dataframe\&quot;&gt;\n  &lt;thead&gt;\n &lt;tr style=\&quot;text-align: left;\&quot;&gt;\n      &lt;th&gt;Step&lt;/th&gt;\n      &lt;th&gt;Training Loss&lt;/th&gt;\n      &lt;th&gt;Validation Loss&lt;/th&gt;\n      &lt;th&gt;Rouge-1&lt;/th&gt;\n      &lt;th&gt;Rouge-2&lt;/th&gt;\n      &lt;th&gt;Rouge-l&lt;/th&gt;\n    &lt;/tr&gt;\n  &lt;/thead&gt;\n  &lt;tbody&gt;\n    &lt;tr&gt;\n      &lt;td&gt;512&lt;/td&gt;\n      &lt;td&gt;1.696300&lt;/td&gt;\n      &lt;td&gt;1.619595&lt;/td&gt;\n      &lt;td&gt;0.773501&lt;/td&gt;\n      &lt;td&gt;0.415039&lt;/td&gt;\n      &lt;td&gt;0.694320&lt;/td&gt;\n    &lt;/tr&gt;\n  &lt;/tbody&gt;\n&lt;/table&gt;&lt;p&gt;&quot; 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    }, 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;&lt;IPython.core.display.HTML object&gt;&quot;, 
+      &quot;text/html&quot;: &quot;\n    &lt;div&gt;\n      \n      &lt;progress value='1025' max='4486' style='width:300px; height:20px; vertical-align: middle;'&gt;&lt;/progress&gt;\n      [1025/4486 1:17:12 &lt; 4:21:14, 0.22 it/s, Epoch 0.23/1]\n    &lt;/div&gt;\n    &lt;table border=\&quot;1\&quot; class=\&quot;dataframe\&quot;&gt;\n  &lt;thead&gt;\n &lt;tr style=\&quot;text-align: left;\&quot;&gt;\n      &lt;th&gt;Step&lt;/th&gt;\n      &lt;th&gt;Training Loss&lt;/th&gt;\n      &lt;th&gt;Validation Loss&lt;/th&gt;\n      &lt;th&gt;Rouge-1&lt;/th&gt;\n      &lt;th&gt;Rouge-2&lt;/th&gt;\n      &lt;th&gt;Rouge-l&lt;/th&gt;\n    &lt;/tr&gt;\n  &lt;/thead&gt;\n  &lt;tbody&gt;\n    &lt;tr&gt;\n      &lt;td&gt;512&lt;/td&gt;\n      &lt;td&gt;1.696300&lt;/td&gt;\n      &lt;td&gt;1.619595&lt;/td&gt;\n      &lt;td&gt;0.773501&lt;/td&gt;\n      &lt;td&gt;0.415039&lt;/td&gt;\n      &lt;td&gt;0.694320&lt;/td&gt;\n    &lt;/tr&gt;\n    &lt;tr&gt;\n      &lt;td&gt;1024&lt;/td&gt;\n      &lt;td&gt;1.696600&lt;/td&gt;\n      &lt;td&gt;1.620052&lt;/td&gt;\n      &lt;td&gt;0.773526&lt;/td&gt;\n      &lt;td&gt;0.415000&lt;/td&gt;\n      &lt;td&gt;0.694275&lt;/td&gt;\n    &lt;/tr&gt;\n  &lt;/tbody&gt;\n&lt;/table&gt;&lt;p&gt;&quot; 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    }, 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;&lt;IPython.core.display.HTML object&gt;&quot;, 
+      &quot;text/html&quot;: &quot;\n    &lt;div&gt;\n      \n      &lt;progress value='1113' max='4486' style='width:300px; height:20px; vertical-align: middle;'&gt;&lt;/progress&gt;\n      [1113/4486 1:37:18 &lt; 4:55:24, 0.19 it/s, Epoch 0.25/1]\n    &lt;/div&gt;\n    &lt;table border=\&quot;1\&quot; class=\&quot;dataframe\&quot;&gt;\n  &lt;thead&gt;\n &lt;tr style=\&quot;text-align: left;\&quot;&gt;\n      &lt;th&gt;Step&lt;/th&gt;\n      &lt;th&gt;Training Loss&lt;/th&gt;\n      &lt;th&gt;Validation Loss&lt;/th&gt;\n      &lt;th&gt;Rouge-1&lt;/th&gt;\n      &lt;th&gt;Rouge-2&lt;/th&gt;\n      &lt;th&gt;Rouge-l&lt;/th&gt;\n    &lt;/tr&gt;\n  &lt;/thead&gt;\n  &lt;tbody&gt;\n    &lt;tr&gt;\n      &lt;td&gt;512&lt;/td&gt;\n      &lt;td&gt;1.696300&lt;/td&gt;\n      &lt;td&gt;1.619595&lt;/td&gt;\n      &lt;td&gt;0.773501&lt;/td&gt;\n      &lt;td&gt;0.415039&lt;/td&gt;\n      &lt;td&gt;0.694320&lt;/td&gt;\n    &lt;/tr&gt;\n    &lt;tr&gt;\n      &lt;td&gt;1024&lt;/td&gt;\n      &lt;td&gt;1.696600&lt;/td&gt;\n      &lt;td&gt;1.620052&lt;/td&gt;\n      &lt;td&gt;0.773526&lt;/td&gt;\n      &lt;td&gt;0.415000&lt;/td&gt;\n      &lt;td&gt;0.694275&lt;/td&gt;\n    &lt;/tr&gt;\n  &lt;/tbody&gt;\n&lt;/table&gt;&lt;p&gt;&quot; 
+     }, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;display_data&quot; 
+    }, 
+    { 
+     &quot;ename&quot;: &quot;KeyboardInterrupt&quot;, 
+     &quot;evalue&quot;: &quot;&quot;, 
+     &quot;output_type&quot;: &quot;error&quot;, 
+     &quot;traceback&quot;: [ 
+      &quot;\u001B[1;31m---------------------------------------------------------------------------\u001B[0m&quot;, 
+      &quot;\u001B[1;31mKeyboardInterrupt\u001B[0m                         Traceback (most recent call last)&quot;, 
+      &quot;Cell \u001B[1;32mIn[30], line 1\u001B[0m\n\u001B[1;32m----&gt; 1\u001B[0m \u001B[43mtrainer\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mtrain\u001B[49m\u001B[43m(\u001B[49m\u001B[43m)\u001B[49m\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\trainer.py:1780\u001B[0m, in \u001B[0;36mTrainer.train\u001B[1;34m(self, resume_from_checkpoint, trial, ignore_keys_for_eval, **kwargs)\u001B[0m\n\u001B[0;32m   1778\u001B[0m         hf_hub_utils\u001B[38;5;241m.\u001B[39menable_progress_bars()\n\u001B[0;32m   1779\u001B[0m \u001B[38;5;28;01melse\u001B[39;00m:\n\u001B[1;32m-&gt; 1780\u001B[0m     \u001B[38;5;28;01mreturn\u001B[39;00m \u001B[43minner_training_loop\u001B[49m\u001B[43m(\u001B[49m\n\u001B[0;32m   1781\u001B[0m \u001B[43m        \u001B[49m\u001B[43margs\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43margs\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m   1782\u001B[0m \u001B[43m        \u001B[49m\u001B[43mresume_from_checkpoint\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mresume_from_checkpoint\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m   1783\u001B[0m \u001B[43m        \u001B[49m\u001B[43mtrial\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mtrial\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m   1784\u001B[0m \u001B[43m        \u001B[49m\u001B[43mignore_keys_for_eval\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43mignore_keys_for_eval\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m   1785\u001B[0m \u001B[43m    \u001B[49m\u001B[43m)\u001B[49m\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\trainer.py:2118\u001B[0m, in \u001B[0;36mTrainer._inner_training_loop\u001B[1;34m(self, batch_size, args, resume_from_checkpoint, trial, ignore_keys_for_eval)\u001B[0m\n\u001B[0;32m   2115\u001B[0m     \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mcontrol \u001B[38;5;241m=\u001B[39m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mcallback_handler\u001B[38;5;241m.\u001B[39mon_step_begin(args, \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mstate, \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mcontrol)\n\u001B[0;32m   2117\u001B[0m \u001B[38;5;28;01mwith\u001B[39;00m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39maccelerator\u001B[38;5;241m.\u001B[39maccumulate(model):\n\u001B[1;32m-&gt; 2118\u001B[0m     tr_loss_step \u001B[38;5;241m=\u001B[39m \u001B[38;5;28;43mself\u001B[39;49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mtraining_step\u001B[49m\u001B[43m(\u001B[49m\u001B[43mmodel\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43minputs\u001B[49m\u001B[43m)\u001B[49m\n\u001B[0;32m   2120\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m (\n\u001B[0;32m   2121\u001B[0m     args\u001B[38;5;241m.\u001B[39mlogging_nan_inf_filter\n\u001B[0;32m   2122\u001B[0m     \u001B[38;5;129;01mand\u001B[39;00m \u001B[38;5;129;01mnot\u001B[39;00m is_torch_xla_available()\n\u001B[0;32m   2123\u001B[0m     \u001B[38;5;129;01mand\u001B[39;00m (torch\u001B[38;5;241m.\u001B[39misnan(tr_loss_step) \u001B[38;5;129;01mor\u001B[39;00m torch\u001B[38;5;241m.\u001B[39misinf(tr_loss_step))\n\u001B[0;32m   2124\u001B[0m ):\n\u001B[0;32m   2125\u001B[0m     \u001B[38;5;66;03m# if loss is nan or inf simply add the average of previous logged losses\u001B[39;00m\n\u001B[0;32m   2126\u001B[0m     tr_loss \u001B[38;5;241m+\u001B[39m\u001B[38;5;241m=\u001B[39m tr_loss \u001B[38;5;241m/\u001B[39m (\u001B[38;5;241m1\u001B[39m \u001B[38;5;241m+\u001B[39m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mstate\u001B[38;5;241m.\u001B[39mglobal_step \u001B[38;5;241m-\u001B[39m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39m_globalstep_last_logged)\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\transformers\\trainer.py:3045\u001B[0m, in \u001B[0;36mTrainer.training_step\u001B[1;34m(self, model, inputs)\u001B[0m\n\u001B[0;32m   3043\u001B[0m         scaled_loss\u001B[38;5;241m.\u001B[39mbackward()\n\u001B[0;32m   3044\u001B[0m \u001B[38;5;28;01melse\u001B[39;00m:\n\u001B[1;32m-&gt; 3045\u001B[0m     \u001B[38;5;28;43mself\u001B[39;49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43maccelerator\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mbackward\u001B[49m\u001B[43m(\u001B[49m\u001B[43mloss\u001B[49m\u001B[43m)\u001B[49m\n\u001B[0;32m   3047\u001B[0m \u001B[38;5;28;01mreturn\u001B[39;00m loss\u001B[38;5;241m.\u001B[39mdetach() \u001B[38;5;241m/\u001B[39m \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39margs\u001B[38;5;241m.\u001B[39mgradient_accumulation_steps\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\accelerate\\accelerator.py:2013\u001B[0m, in \u001B[0;36mAccelerator.backward\u001B[1;34m(self, loss, **kwargs)\u001B[0m\n\u001B[0;32m   2011\u001B[0m     \u001B[38;5;28mself\u001B[39m\u001B[38;5;241m.\u001B[39mscaler\u001B[38;5;241m.\u001B[39mscale(loss)\u001B[38;5;241m.\u001B[39mbackward(\u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs)\n\u001B[0;32m   2012\u001B[0m \u001B[38;5;28;01melse\u001B[39;00m:\n\u001B[1;32m-&gt; 2013\u001B[0m     loss\u001B[38;5;241m.\u001B[39mbackward(\u001B[38;5;241m*\u001B[39m\u001B[38;5;241m*\u001B[39mkwargs)\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\torch\\_tensor.py:522\u001B[0m, in \u001B[0;36mTensor.backward\u001B[1;34m(self, gradient, retain_graph, create_graph, inputs)\u001B[0m\n\u001B[0;32m    512\u001B[0m \u001B[38;5;28;01mif\u001B[39;00m has_torch_function_unary(\u001B[38;5;28mself\u001B[39m):\n\u001B[0;32m    513\u001B[0m     \u001B[38;5;28;01mreturn\u001B[39;00m handle_torch_function(\n\u001B[0;32m    514\u001B[0m         Tensor\u001B[38;5;241m.\u001B[39mbackward,\n\u001B[0;32m    515\u001B[0m         (\u001B[38;5;28mself\u001B[39m,),\n\u001B[1;32m   (...)\u001B[0m\n\u001B[0;32m    520\u001B[0m         inputs\u001B[38;5;241m=\u001B[39minputs,\n\u001B[0;32m    521\u001B[0m     )\n\u001B[1;32m--&gt; 522\u001B[0m \u001B[43mtorch\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mautograd\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mbackward\u001B[49m\u001B[43m(\u001B[49m\n\u001B[0;32m    523\u001B[0m \u001B[43m    \u001B[49m\u001B[38;5;28;43mself\u001B[39;49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mgradient\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mretain_graph\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43mcreate_graph\u001B[49m\u001B[43m,\u001B[49m\u001B[43m \u001B[49m\u001B[43minputs\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[43minputs\u001B[49m\n\u001B[0;32m    524\u001B[0m \u001B[43m\u001B[49m\u001B[43m)\u001B[49m\n&quot;, 
+      &quot;File \u001B[1;32m~\\anaconda3\\envs\\ML2\\lib\\site-packages\\torch\\autograd\\__init__.py:266\u001B[0m, in \u001B[0;36mbackward\u001B[1;34m(tensors, grad_tensors, retain_graph, create_graph, grad_variables, inputs)\u001B[0m\n\u001B[0;32m    261\u001B[0m     retain_graph \u001B[38;5;241m=\u001B[39m create_graph\n\u001B[0;32m    263\u001B[0m \u001B[38;5;66;03m# The reason we repeat the same comment below is that\u001B[39;00m\n\u001B[0;32m    264\u001B[0m \u001B[38;5;66;03m# some Python versions print out the first line of a multi-line function\u001B[39;00m\n\u001B[0;32m    265\u001B[0m \u001B[38;5;66;03m# calls in the traceback and some print out the last line\u001B[39;00m\n\u001B[1;32m--&gt; 266\u001B[0m \u001B[43mVariable\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43m_execution_engine\u001B[49m\u001B[38;5;241;43m.\u001B[39;49m\u001B[43mrun_backward\u001B[49m\u001B[43m(\u001B[49m\u001B[43m  \u001B[49m\u001B[38;5;66;43;03m# Calls into the C++ engine to run the backward pass\u001B[39;49;00m\n\u001B[0;32m    267\u001B[0m \u001B[43m    \u001B[49m\u001B[43mtensors\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    268\u001B[0m \u001B[43m    \u001B[49m\u001B[43mgrad_tensors_\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    269\u001B[0m \u001B[43m    \u001B[49m\u001B[43mretain_graph\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    270\u001B[0m \u001B[43m    \u001B[49m\u001B[43mcreate_graph\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    271\u001B[0m \u001B[43m    \u001B[49m\u001B[43minputs\u001B[49m\u001B[43m,\u001B[49m\n\u001B[0;32m    272\u001B[0m \u001B[43m    \u001B[49m\u001B[43mallow_unreachable\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[38;5;28;43;01mTrue\u001B[39;49;00m\u001B[43m,\u001B[49m\n\u001B[0;32m    273\u001B[0m \u001B[43m    \u001B[49m\u001B[43maccumulate_grad\u001B[49m\u001B[38;5;241;43m=\u001B[39;49m\u001B[38;5;28;43;01mTrue\u001B[39;49;00m\u001B[43m,\u001B[49m\n\u001B[0;32m    274\u001B[0m \u001B[43m\u001B[49m\u001B[43m)\u001B[49m\n&quot;, 
+      &quot;\u001B[1;31mKeyboardInterrupt\u001B[0m: &quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;trainer.train()&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:39:59.301925300Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T01:02:35.952531500Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;fc939e3c5c5acebd&quot;, 
+   &quot;execution_count&quot;: 30 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step9: Evaluate the T5 model&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;7076bf7f12c379a6&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;As fans continue to mourn the passing of their favorite Vulcan, Leonard Nimoy's passion  for photography - and the women he put in front of the lens - is also being recognized. Nimoy, called the 'Conscience of Star Trek' by the show's creator, once said he used photography to express the idea of feminine power. After eight years of taking photographs of plus-sized women, Nimoy published a collection titled The Full Body Project in 2007, which featured obese women photographed in the nude. It was when Nimoy was doing an exhibit for a different photography collection that he was turned to the idea of shooting fuller-figured women. After eight years of taking photographs of plus-sized women, Leonard Nimoy published a collection titled The Full Body Project in 2007, which featured obese women photographed in the nude . For The Full Body Project, Nimoy found new subjects in the plus-size burlesque group The Fat-Bottom Revue . He was inspired by their late founder Heather MacAllister, who he recalled once told him 'whenever a fat person steps on stage to perform, and it's not the butt of a joke, that's a political statement' He said a 250-pound woman approached him after a presentation and told Nimoy he only worked with models that had a certain body type, according to the New York Times. She then asked Nimoy if he would be interested in working with her despite her different shape, and he said yes. Nimoy was nervous the day of the shoot, afraid he wouldn't do his new subject justice, he told NPR. 'I think that's a reflection of something that's prevalent in our culture,' he said. 'We are sort of conditioned to see a different body type as acceptable and maybe look away when the other body type arrives.' But Nimoy did not look away, instead he pointed his camera right at her. And his pictures immediately sparked an interest and a response from the public. And a new passion had sparked inside Nimoy. The pictures feature the women dancing, laughing and proudly staring straight into the camera. Nimoy said the pictures show the women's strong self-esteem . 'These women are projecting an image that is their own,' he said. 'And one that also stems from their own story rather than mine' For The Full Body Project, Nimoy found new subjects in the plus-size burlesque group The Fat-Bottom Revue. He was inspired by their late founder Heather MacAllister, who he recalled once told him 'whenever a fat person steps on stage to perform, and it's not the butt of a joke, that's a political statement'. And with that Nimoy became an unlikely, but passionate, size-acceptance advocate. He told the New York Times the book was a 'direct response to the pressure women face to conform to a size two'. The pictures feature the women dancing, laughing and proudly staring straight into the camera - often times fully nude. Nimoy said the pictures show the women's strong self-esteem, he wrote for R.Michelson Galleries, where the pictures were featured in. 'These women are projecting an image that is their own,' he said. 'And one that also stems from their own story rather than mine.' It wasn't a far step for Nimoy, who has a history of championing women. It was when Nimoy was doing an exhibit for a different photography collection that he was turned to the idea of shooting fuller-sized women . A 250-pound woman approached him after a presentation and told Nimoy he only worked with models that had a certain body type. She then asked Nimoy if he would be interested in working with her despite her different shape, and he said yes . Nimoy said the book was a 'direct response to the pressure women face to conform to a size two' In the 1960s while he was filming Star Trek, Nimoy found out that Nichelle Nichols was not getting paid the same amount as her male co-stars. Nimoy approached the managers of the show and immediately had her pay equalized, he confirmed to TrekMovie.com . And in the 1970s he fought for Nichols again, telling producers he refused to do Spock's voice in the animated Star Trek series if Nichols, who had yet to receive the offer, was hired as well. Tributes to the star have been pouring in since news broke he had died on Friday morning following a long battle with chronic obstructive pulmonary disease. His Star Trek co-star William Shatner, who has recently come under fire for missing Nimoy's funeral to attend a charity event, said: 'I loved him like a brother. 'We will all miss his humor, his talent, and his capacity to love.'\n&quot;, 
+      &quot;--------------------\n&quot;, 
+      &quot;Nimoy's collection The Full Body Project from 2007 featured obese women photographed in the nude . His subjects are the plus-size burlesque group The Fat-Bottom Revue from San Francisco . Pictures feature the women dancing, laughing and proudly staring straight into the camera . Nimoy said the book was a 'direct response to the pressure women face to conform to a size two'\n&quot;, 
+      &quot;--------------------\n&quot;, 
+      &quot;Leonard Nimoy once said he used photography to express the idea of feminine power . After eight years of taking photographs of plus-sized women, he published a collection titled The Full Body Project in 2007 . It featured obese women photographed in the nude . It was when Ni\n&quot;, 
+      &quot;--------------------\n&quot;, 
+      &quot; Rouge-L between label and generate summary with t5 model is  {'r': 0.45, 'p': 0.375, 'f': 0.4090909041322315}\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;pipe = pipeline('text2text-generation', model=model, tokenizer=tokenizer, device=0)\n&quot;, 
+    &quot;text = ds['validation'][1000]['article']\n&quot;, 
+    &quot;print(text)\n&quot;, 
+    &quot;print('-'*20)\n&quot;, 
+    &quot;target = ds['validation'][1000]['highlights']\n&quot;, 
+    &quot;print(target)\n&quot;, 
+    &quot;print('-'*20)\n&quot;, 
+    &quot;pip_res = pipe(\&quot;Generate summary:\\n\&quot; + text, max_length = 64)\n&quot;, 
+    &quot;t5_summary = pip_res[0]['generated_text']\n&quot;, 
+    &quot;print(t5_summary)\n&quot;, 
+    &quot;print('-'*20)\n&quot;, 
+    &quot;print(\&quot; Rouge-L between label and generate summary with t5 model is \&quot;, rouge.get_scores(target, t5_summary)[0]['rouge-l'])&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:47:36.249134200Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:47:35.224055200Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;84a4fd86ab0b9685&quot;, 
+   &quot;execution_count&quot;: 57 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step10: Sentence ranking method&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;e368eeef503e4d3d&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;import spacy\n&quot;, 
+    &quot;from spacy.lang.en.stop_words import STOP_WORDS\n&quot;, 
+    &quot;from string import punctuation\n&quot;, 
+    &quot;from heapq import nlargest\n&quot;, 
+    &quot;from datasets import load_dataset\n&quot;, 
+    &quot;from rouge import Rouge\n&quot;, 
+    &quot;from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, DataCollatorForSeq2Seq, Seq2SeqTrainer, Seq2SeqTrainingArguments\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;stopwords = list(STOP_WORDS)\n&quot;, 
+    &quot;nlp = spacy.load('en_core_web_sm')&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:45:50.885086200Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:45:49.317965100Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;2cc079d526bdedb2&quot;, 
+   &quot;execution_count&quot;: 50 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;def select_main_sentence(text, punctuation, nlp):\n&quot;, 
+    &quot;    summary_length = 3\n&quot;, 
+    &quot;    doc = nlp(text)\n&quot;, 
+    &quot;    tokens = [token.text for token in doc]\n&quot;, 
+    &quot;    punctuation = punctuation + '\\n'\n&quot;, 
+    &quot;    sentence_tokens = [sent for sent in doc.sents]\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    word_frequencies = {}\n&quot;, 
+    &quot;    for word in doc:\n&quot;, 
+    &quot;        if word.text.lower() not in stopwords:\n&quot;, 
+    &quot;            if word.text.lower() not in punctuation:\n&quot;, 
+    &quot;                if word.text not in word_frequencies.keys():\n&quot;, 
+    &quot;                    word_frequencies[word.text] = 1\n&quot;, 
+    &quot;                else:\n&quot;, 
+    &quot;                    word_frequencies[word.text] += 1\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;    sentence_scores = {}\n&quot;, 
+    &quot;    for sent in sentence_tokens:\n&quot;, 
+    &quot;        for word in sent:\n&quot;, 
+    &quot;            if word.text.lower() in word_frequencies.keys():\n&quot;, 
+    &quot;                if sent not in sentence_scores.keys():\n&quot;, 
+    &quot;                    sentence_scores[sent] = word_frequencies[word.text.lower()]\n&quot;, 
+    &quot;                else:\n&quot;, 
+    &quot;                    sentence_scores[sent] += word_frequencies[word.text.lower()]\n&quot;, 
+    &quot;         \n&quot;, 
+    &quot;    summary = nlargest(summary_length, sentence_scores, key = sentence_scores.get)\n&quot;, 
+    &quot;    return summary\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    &quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:45:52.678227600Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:45:52.657224700Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;1dad68624c65aee4&quot;, 
+   &quot;execution_count&quot;: 51 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;\n&quot;, 
+      &quot;----------------------------article---------------------------------------\n&quot;, 
+      &quot;\n&quot;, 
+      &quot;As fans continue to mourn the passing of their favorite Vulcan, Leonard Nimoy's passion  for photography - and the women he put in front of the lens - is also being recognized. Nimoy, called the 'Conscience of Star Trek' by the show's creator, once said he used photography to express the idea of feminine power. After eight years of taking photographs of plus-sized women, Nimoy published a collection titled The Full Body Project in 2007, which featured obese women photographed in the nude. It was when Nimoy was doing an exhibit for a different photography collection that he was turned to the idea of shooting fuller-figured women. After eight years of taking photographs of plus-sized women, Leonard Nimoy published a collection titled The Full Body Project in 2007, which featured obese women photographed in the nude . For The Full Body Project, Nimoy found new subjects in the plus-size burlesque group The Fat-Bottom Revue . He was inspired by their late founder Heather MacAllister, who he recalled once told him 'whenever a fat person steps on stage to perform, and it's not the butt of a joke, that's a political statement' He said a 250-pound woman approached him after a presentation and told Nimoy he only worked with models that had a certain body type, according to the New York Times. She then asked Nimoy if he would be interested in working with her despite her different shape, and he said yes. Nimoy was nervous the day of the shoot, afraid he wouldn't do his new subject justice, he told NPR. 'I think that's a reflection of something that's prevalent in our culture,' he said. 'We are sort of conditioned to see a different body type as acceptable and maybe look away when the other body type arrives.' But Nimoy did not look away, instead he pointed his camera right at her. And his pictures immediately sparked an interest and a response from the public. And a new passion had sparked inside Nimoy. The pictures feature the women dancing, laughing and proudly staring straight into the camera. Nimoy said the pictures show the women's strong self-esteem . 'These women are projecting an image that is their own,' he said. 'And one that also stems from their own story rather than mine' For The Full Body Project, Nimoy found new subjects in the plus-size burlesque group The Fat-Bottom Revue. He was inspired by their late founder Heather MacAllister, who he recalled once told him 'whenever a fat person steps on stage to perform, and it's not the butt of a joke, that's a political statement'. And with that Nimoy became an unlikely, but passionate, size-acceptance advocate. He told the New York Times the book was a 'direct response to the pressure women face to conform to a size two'. The pictures feature the women dancing, laughing and proudly staring straight into the camera - often times fully nude. Nimoy said the pictures show the women's strong self-esteem, he wrote for R.Michelson Galleries, where the pictures were featured in. 'These women are projecting an image that is their own,' he said. 'And one that also stems from their own story rather than mine.' It wasn't a far step for Nimoy, who has a history of championing women. It was when Nimoy was doing an exhibit for a different photography collection that he was turned to the idea of shooting fuller-sized women . A 250-pound woman approached him after a presentation and told Nimoy he only worked with models that had a certain body type. She then asked Nimoy if he would be interested in working with her despite her different shape, and he said yes . Nimoy said the book was a 'direct response to the pressure women face to conform to a size two' In the 1960s while he was filming Star Trek, Nimoy found out that Nichelle Nichols was not getting paid the same amount as her male co-stars. Nimoy approached the managers of the show and immediately had her pay equalized, he confirmed to TrekMovie.com . And in the 1970s he fought for Nichols again, telling producers he refused to do Spock's voice in the animated Star Trek series if Nichols, who had yet to receive the offer, was hired as well. Tributes to the star have been pouring in since news broke he had died on Friday morning following a long battle with chronic obstructive pulmonary disease. His Star Trek co-star William Shatner, who has recently come under fire for missing Nimoy's funeral to attend a charity event, said: 'I loved him like a brother. 'We will all miss his humor, his talent, and his capacity to love.'\n&quot;, 
+      &quot;\n&quot;, 
+      &quot;----------------------------label---------------------------------------\n&quot;, 
+      &quot;\n&quot;, 
+      &quot;Nimoy's collection The Full Body Project from 2007 featured obese women photographed in the nude . His subjects are the plus-size burlesque group The Fat-Bottom Revue from San Francisco . Pictures feature the women dancing, laughing and proudly staring straight into the camera . Nimoy said the book was a 'direct response to the pressure women face to conform to a size two'\n&quot;, 
+      &quot;\n&quot;, 
+      &quot;----------------------------sentence ranking---------------------------------------\n&quot;, 
+      &quot;He was inspired by their late founder Heather MacAllister, who he recalled once told him 'whenever a fat person steps on stage to perform, and it's not the butt of a joke, that's a political statement' He said a 250-pound woman approached him after a presentation and told Nimoy he only worked with models that had a certain body type, according to the New York Times.After eight years of taking photographs of plus-sized women, Nimoy published a collection titled The Full Body Project in 2007, which featured obese women photographed in the nude.After eight years of taking photographs of plus-sized women, Leonard Nimoy published a collection titled The Full Body Project in 2007, which featured obese women photographed in the nude .\n&quot;, 
+      &quot; Rouge-L:  {'r': 0.22077922077922077, 'p': 0.3541666666666667, 'f': 0.27199999526912005}\n&quot;, 
+      &quot;\n&quot;, 
+      &quot;----------------------------fine-tuned t5 model---------------------------------------\n&quot;, 
+      &quot;Leonard Nimoy once said he used photography to express the idea of feminine power . After eight years of taking photographs of plus-sized women, he published a collection titled The Full Body Project in 2007 . It featured obese women photographed in the nude . It was when Ni\n&quot;, 
+      &quot; Rouge-L between label and generate summary with t5 model is  {'r': 0.45, 'p': 0.375, 'f': 0.4090909041322315}\n&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;print(\&quot;\\n----------------------------article---------------------------------------\\n\&quot;)\n&quot;, 
+    &quot;text = ds['validation'][1000]['article']\n&quot;, 
+    &quot;print(text)\n&quot;, 
+    &quot;print(\&quot;\\n----------------------------label---------------------------------------\\n\&quot;)\n&quot;, 
+    &quot;target = ds['validation'][1000]['highlights']\n&quot;, 
+    &quot;print(target)\n&quot;, 
+    &quot;print(\&quot;\\n----------------------------sentence ranking---------------------------------------\&quot;)\n&quot;, 
+    &quot;summary = select_main_sentence(text, punctuation, nlp)\n&quot;, 
+    &quot;generate_summary = \&quot;\&quot;\n&quot;, 
+    &quot;for each in summary:\n&quot;, 
+    &quot;    generate_summary = generate_summary + str(each)\n&quot;, 
+    &quot;print(generate_summary)\n&quot;, 
+    &quot;print(\&quot; Rouge-L: \&quot;, rouge.get_scores(target, generate_summary)[0]['rouge-l'])\n&quot;, 
+    &quot;\n&quot;, 
+    &quot;print(\&quot;\\n----------------------------fine-tuned t5 model---------------------------------------\&quot;)\n&quot;, 
+    &quot;pip_res = pipe(\&quot;Generate summary:\\n\&quot; + text, max_length = 64)\n&quot;, 
+    &quot;t5_summary = pip_res[0]['generated_text']\n&quot;, 
+    &quot;print(t5_summary)\n&quot;, 
+    &quot;print(\&quot; Rouge-L between label and generate summary with t5 model is \&quot;, rouge.get_scores(target, t5_summary)[0]['rouge-l'])&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:47:23.430129900Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:47:22.331043800Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;e9b16a1d8620421&quot;, 
+   &quot;execution_count&quot;: 56 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;markdown&quot;, 
+   &quot;source&quot;: [ 
+    &quot;### Step11: Comparison between different models&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;47112f67f76a49fa&quot; 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;original_model = T5ForConditionalGeneration.from_pretrained(\&quot;google-t5/t5-small\&quot;, max_memory = 1024)\n&quot;, 
+    &quot;original_pipe = pipeline('text2text-generation', model=original_model, tokenizer=tokenizer)\n&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T02:48:53.212554200Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T02:48:52.904531600Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;7289efcc0e1a6d1e&quot;, 
+   &quot;execution_count&quot;: 63 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;validations = ds['validation'].shuffle(seed=42)\n&quot;, 
+    &quot;validations = validations[:int(.1*len(validations))]\n&quot;, 
+    &quot;texts = validations['article']\n&quot;, 
+    &quot;labels = validations['highlights']\n&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T03:01:28.409441500Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T03:01:28.034419800Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;40d0c557bd2e3134&quot;, 
+   &quot;execution_count&quot;: 91 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;name&quot;: &quot;stdout&quot;, 
+     &quot;output_type&quot;: &quot;stream&quot;, 
+     &quot;text&quot;: [ 
+      &quot;1336/1336&quot; 
+     ] 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;rouge_ranking = []\n&quot;, 
+    &quot;rouge_original = []\n&quot;, 
+    &quot;rouge_t5 = []\n&quot;, 
+    &quot;for idx in range(len(texts)):\n&quot;, 
+    &quot;    n = len(texts)\n&quot;, 
+    &quot;    text = texts[idx]\n&quot;, 
+    &quot;    target = labels[idx]\n&quot;, 
+    &quot;    summary_ranking = select_main_sentence(text, punctuation, nlp)\n&quot;, 
+    &quot;    generate_summary = \&quot;\&quot;   \n&quot;, 
+    &quot;    for each in summary_ranking:\n&quot;, 
+    &quot;        generate_summary = generate_summary + str(each)\n&quot;, 
+    &quot;        \n&quot;, 
+    &quot;    rouge_ranking.append(rouge.get_scores(target, generate_summary)[0]['rouge-l'])  \n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    pip_res = pipe(\&quot;Generate summary:\\n\&quot; + text, max_length = 64)\n&quot;, 
+    &quot;    t5_summary = pip_res[0]['generated_text']\n&quot;, 
+    &quot;    rouge_t5.append(rouge.get_scores(target, t5_summary)[0]['rouge-l'])\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    original_res = original_pipe(\&quot;Generate summary:\\n\&quot; + text, max_length = 64)\n&quot;, 
+    &quot;    original_summary = original_res[0]['generated_text']\n&quot;, 
+    &quot;    rouge_original.append(rouge.get_scores(target, original_summary)[0]['rouge-l'])\n&quot;, 
+    &quot;    print(\&quot;\\r{}/{}\&quot;.format(idx+1,n), end=\&quot;\&quot;)\n&quot;, 
+    &quot;    \n&quot;, 
+    &quot;    &quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T03:38:58.236738900Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T03:01:28.477445400Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;5105dade889ad376&quot;, 
+   &quot;execution_count&quot;: 92 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [ 
+    &quot;def compute_avg(score):\n&quot;, 
+    &quot;    n = len(score)\n&quot;, 
+    &quot;    r = 0\n&quot;, 
+    &quot;    p = 0\n&quot;, 
+    &quot;    f = 0\n&quot;, 
+    &quot;    for each in score:\n&quot;, 
+    &quot;        r = r + each['r']\n&quot;, 
+    &quot;        p = p + each['p']\n&quot;, 
+    &quot;        f = f + each['f']\n&quot;, 
+    &quot;    return {'r':r/n, 'p':p/n,'f': f/n}      &quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T03:40:38.558000400Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T03:40:38.523002Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;5eaaae26b444f32e&quot;, 
+   &quot;execution_count&quot;: 97 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;{'r': 0.4069127773617567, 'p': 0.3150771264055881, 'f': 0.3470146897310208}&quot; 
+     }, 
+     &quot;execution_count&quot;: 98, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;compute_avg(rouge_t5)&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T03:40:38.933013800Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T03:40:38.913014200Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;a1c5dcbe77123c10&quot;, 
+   &quot;execution_count&quot;: 98 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;{'r': 0.22760192852431332, 'p': 0.3474619074765952, 'f': 0.26578509271083867}&quot; 
+     }, 
+     &quot;execution_count&quot;: 99, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;compute_avg(rouge_ranking)&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T03:40:39.693039100Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T03:40:39.673039400Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;ec3419e8e7f4caa3&quot;, 
+   &quot;execution_count&quot;: 99 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [ 
+    { 
+     &quot;data&quot;: { 
+      &quot;text/plain&quot;: &quot;{'r': 0.3484716288736835, 'p': 0.24377807127441672, 'f': 0.27862577607101885}&quot; 
+     }, 
+     &quot;execution_count&quot;: 100, 
+     &quot;metadata&quot;: {}, 
+     &quot;output_type&quot;: &quot;execute_result&quot; 
+    } 
+   ], 
+   &quot;source&quot;: [ 
+    &quot;compute_avg(rouge_original)&quot; 
+   ], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false, 
+    &quot;ExecuteTime&quot;: { 
+     &quot;end_time&quot;: &quot;2024-04-25T03:40:40.819075900Z&quot;, 
+     &quot;start_time&quot;: &quot;2024-04-25T03:40:40.785076700Z&quot; 
+    } 
+   }, 
+   &quot;id&quot;: &quot;918779ab4105e78&quot;, 
+   &quot;execution_count&quot;: 100 
+  }, 
+  { 
+   &quot;cell_type&quot;: &quot;code&quot;, 
+   &quot;outputs&quot;: [], 
+   &quot;source&quot;: [], 
+   &quot;metadata&quot;: { 
+    &quot;collapsed&quot;: false 
+   }, 
+   &quot;id&quot;: &quot;e5da189c7d214778&quot; 
+  } 
+ ], 
+ &quot;metadata&quot;: { 
+  &quot;kernelspec&quot;: { 
+   &quot;display_name&quot;: &quot;Python 3&quot;, 
+   &quot;language&quot;: &quot;python&quot;, 
+   &quot;name&quot;: &quot;python3&quot; 
+  }, 
+  &quot;language_info&quot;: { 
+   &quot;codemirror_mode&quot;: { 
+    &quot;name&quot;: &quot;ipython&quot;, 
+    &quot;version&quot;: 2 
+   }, 
+   &quot;file_extension&quot;: &quot;.py&quot;, 
+   &quot;mimetype&quot;: &quot;text/x-python&quot;, 
+   &quot;name&quot;: &quot;python&quot;, 
+   &quot;nbconvert_exporter&quot;: &quot;python&quot;, 
+   &quot;pygments_lexer&quot;: &quot;ipython2&quot;, 
+   &quot;version&quot;: &quot;2.7.6&quot; 
+  } 
+ }, 
+ &quot;nbformat&quot;: 4, 
+ &quot;nbformat_minor&quot;: 5 
+} 
+</span></pre>
+</body>
+</html>
