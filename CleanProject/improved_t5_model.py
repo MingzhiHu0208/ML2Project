@@ -63,8 +63,6 @@ def parse_args():
     parser.add_argument("--weight_decay", type=float, default=0.01, help="权重衰减率")
     parser.add_argument("--seed", type=int, default=42, help="随机种子")
     parser.add_argument("--mixed_precision", action="store_true", help="是否使用混合精度训练")
-    parser.add_argument("--train_csv", type=str, default="summary_test.csv", help="训练数据CSV文件路径")
-    parser.add_argument("--val_csv", type=str, default="summary_validation.csv", help="验证数据CSV文件路径")
     return parser.parse_args()
 
 def load_csv_dataset(csv_file_path, seed=42):
@@ -113,16 +111,17 @@ def load_csv_dataset(csv_file_path, seed=42):
 def prepare_dataset(tokenizer, args):
     """准备和处理数据集"""
     
-    # 加载自定义CSV数据集
     try:
-        logger.info("加载自定义CSV数据集...")
-        train_ds = load_csv_dataset(args.train_csv, seed=args.seed)
-        val_ds = load_csv_dataset(args.val_csv, seed=args.seed)
+        logger.info("加载CNN/DailyMail数据集...")
+        # 加载数据集
+        dataset = load_dataset("abisee/cnn_dailymail", "2.0.0")
         
-        # 为测试创建一个验证集的副本（如果有需要可以替换成真实的测试集）
-        test_ds = val_ds
+        # 获取训练集、验证集和测试集
+        train_ds = dataset["train"]
+        val_ds = dataset["validation"]
+        test_ds = dataset["test"]
         
-        logger.info(f"加载数据成功 - 训练集: {len(train_ds)}个样本, 验证集: {len(val_ds)}个样本")
+        logger.info(f"加载数据成功 - 训练集: {len(train_ds)}个样本, 验证集: {len(val_ds)}个样本, 测试集: {len(test_ds)}个样本")
         
     except Exception as e:
         logger.error(f"加载数据集时出错: {e}")
@@ -139,7 +138,7 @@ def prepare_dataset(tokenizer, args):
             truncation=True
         )
         
-        # 设置目标文本
+        # 设置目标文本（使用highlights作为摘要）
         labels = tokenizer(
             text_target=examples["highlights"], 
             max_length=args.max_target_length, 
@@ -149,7 +148,7 @@ def prepare_dataset(tokenizer, args):
         
         model_inputs["labels"] = labels["input_ids"]
         
-        # 将-100作为填充标记的标签，这样它们就不会被计算到损失中
+        # 将-100作为填充标记的标签
         for i in range(len(labels["input_ids"])):
             model_inputs["labels"][i] = [
                 -100 if token == tokenizer.pad_token_id else token 
