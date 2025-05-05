@@ -28,6 +28,7 @@ import logging
 import argparse
 from transformers.keras_callbacks import KerasMetricCallback
 import evaluate
+import csv
 
 # 确保TensorFlow使用合适的GPU内存增长方式
 physical_devices = tf.config.list_physical_devices('GPU')
@@ -67,48 +68,58 @@ def parse_args():
     parser.add_argument("--val_csv", type=str, default="summary_validation.csv", help="验证数据CSV文件路径")
     return parser.parse_args()
 
-def load_csv_dataset(csv_file_path, seed=42):
+def load_csv_dataset(csv_file_path: str, seed: int = 42) -> Dataset:
     """
-    从CSV文件加载数据集
-    CSV格式应该包含原文和摘要
+    从 CSV 文件加载数据集，按位置只读前三列（摘要 + 原文两部分）。
+    跳过任何不符合格式的“坏行”。
     """
-    logger.info(f"从CSV文件加载数据: {csv_file_path}")
+    logger.info(f"从 CSV 文件加载数据: {csv_file_path}")
     
-    try:
-        # 读取CSV文件
-        df = pd.read_csv(csv_file_path)
-        
-        # 处理CSV数据，假设CSV文件有3列：索引列、摘要列、原文列1、原文列2
-        # 根据实际CSV格式调整以下内容
-        articles = []
-        highlights = []
-        
-        # 遍历每一行处理数据
-        for _, row in df.iterrows():
-            # 合并原文列
-            article = ' '.join([str(row['1']), str(row['2'])]).strip()
-            # 摘要列
-            highlight = str(row['0']).strip()
-            
-            # 防止空字符串
-            if article and highlight and article != 'nan' and highlight != 'nan':
-                articles.append(article)
-                highlights.append(highlight)
-        
-        # 创建HuggingFace数据集
-        data_dict = {
-            "article": articles,
-            "highlights": highlights
-        }
-        
-        dataset = Dataset.from_dict(data_dict)
-        dataset = dataset.shuffle(seed=seed)
-        
-        return dataset
-    
-    except Exception as e:
-        logger.error(f"加载CSV数据时出错: {e}")
-        raise
+    # 用 Python 引擎，忽略引号，跳过出错行，只取前三列
+    df = pd.read_csv(
+        csv_file_path,
+        header=None,
+        usecols=[0, 1, 2],
+        sep=",",
+        engine="python",
+        quoting=csv.QUOTE_NONE,
+        on_bad_lines="skip",
+        dtype=str,            # 全部当字符串读，避免混类型
+    )
+
+    # 重命名列，方便后续处理
+    df.columns = ["summary", "part1", "part2"]
+
+    # 合并原文两部分
+    df["article"] = (
+        df["part1"].fillna("").str.strip() + " " +
+        df["part2"].fillna("").str.strip()
+    ).str.strip()
+
+    # 清洗摘要列
+    df["highlights"] = df["summary"].fillna("").str.strip()
+
+    # 过滤掉空或只有 'nan' 的行
+    mask = (
+        df["article"].ne("") &
+        df["article"].ne("nan") &
+        df["highlights"].ne("") &
+        df["highlights"].ne("nan")
+    )
+    df = df.loc[mask]
+
+    if df.empty:
+        raise ValueError("没有找到任何有效的数据行，请检查 CSV 格式。")
+
+    logger.info(f"成功加载 {len(df)} 条有效数据")
+
+    # 构造 HuggingFace 数据集并打乱
+    data_dict = {
+        "article": df["article"].tolist(),
+        "highlights": df["highlights"].tolist(),
+    }
+    dataset = Dataset.from_dict(data_dict).shuffle(seed=seed)
+    return dataset
 
 def prepare_dataset(tokenizer, args):
     """准备和处理数据集"""
