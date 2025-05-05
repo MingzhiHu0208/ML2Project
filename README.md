@@ -13,4 +13,4 @@ Spacy<br>
 python -m spacy download en_core_web_sm
 
 
-
+# past version
