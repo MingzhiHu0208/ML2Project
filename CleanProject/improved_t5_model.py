@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """
 改进版T5模型文本摘要实现 (TensorFlow版本)
 包含更先进的微调技术和评估方法
