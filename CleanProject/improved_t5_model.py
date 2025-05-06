@@ -50,11 +50,11 @@ rouge = Rouge()
 def parse_args():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(description="改进的T5模型文本摘要 (TensorFlow版本)")
-    parser.add_argument("--model_name", type=str, default="google/flan-t5-base", help="预训练模型名称")
+    parser.add_argument("--model_name", type=str, default="google/flan-t5-small", help="预训练模型名称")
     parser.add_argument("--max_source_length", type=int, default=512, help="源文本最大长度")
     parser.add_argument("--max_target_length", type=int, default=128, help="目标摘要最大长度")
     parser.add_argument("--learning_rate", type=float, default=2e-5, help="学习率")
-    parser.add_argument("--batch_size", type=int, default=2, help="批量大小")
+    parser.add_argument("--batch_size", type=int, default=1, help="批量大小")
     parser.add_argument("--epochs", type=int, default=3, help="训练轮数")
     parser.add_argument("--use_wandb", action="store_true", help="是否使用wandb记录实验")
     parser.add_argument("--output_dir", type=str, default="./improved_t5_summary_tf", help="输出目录")
