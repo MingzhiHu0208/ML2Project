@@ -365,7 +365,7 @@ def train_model(model, tokenizer, datasets, args):
     #     compute_metrics_for_keras,
     #     eval_dataset=datasets["val"],
     #     batch_size=args.batch_size
-    )
+    #)
     
     # 设置模型检查点
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
