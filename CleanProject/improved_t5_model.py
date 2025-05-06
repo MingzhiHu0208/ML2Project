@@ -30,6 +30,9 @@ from transformers.keras_callbacks import KerasMetricCallback
 import evaluate
 import csv
 
+# Enable XLA (JIT) compilation for better GPU utilization
+tf.config.optimizer.set_jit(True)
+
 # 确保TensorFlow使用合适的GPU内存增长方式
 physical_devices = tf.config.list_physical_devices('GPU')
 if physical_devices:
@@ -204,7 +207,7 @@ def prepare_dataset(tokenizer, args):
                 padding="longest",
                 return_tensors="tf"
             )
-        )
+        ).prefetch(tf.data.AUTOTUNE)
     
     tf_train_dataset = convert_to_tf_dataset(tokenized_train_ds, args.batch_size)
     tf_eval_dataset = convert_to_tf_dataset(tokenized_val_ds, args.batch_size)
@@ -321,7 +324,7 @@ def train_model(model, tokenizer, datasets, args):
         )
     
     # 编译模型
-    model.compile(optimizer=optimizer)
+    model.compile(optimizer=optimizer, jit_compile=True)
     
     # 设置评估回调
     rouge_metric = evaluate.load('rouge')
