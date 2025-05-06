@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument("--max_source_length", type=int, default=512, help="源文本最大长度")
     parser.add_argument("--max_target_length", type=int, default=128, help="目标摘要最大长度")
     parser.add_argument("--learning_rate", type=float, default=2e-5, help="学习率")
-    parser.add_argument("--batch_size", type=int, default=1, help="批量大小")
+    parser.add_argument("--batch_size", type=int, default=2, help="批量大小")
     parser.add_argument("--epochs", type=int, default=3, help="训练轮数")
     parser.add_argument("--use_wandb", action="store_true", help="是否使用wandb记录实验")
     parser.add_argument("--output_dir", type=str, default="./improved_t5_summary_tf", help="输出目录")
@@ -358,10 +358,10 @@ def train_model(model, tokenizer, datasets, args):
         result = {k: round(v * 100, 4) for k, v in result.items()}
         return result
     
-    metric_callback = KerasMetricCallback(
-        compute_metrics_for_keras,
-        eval_dataset=datasets["val"],
-        batch_size=args.batch_size
+    # metric_callback = KerasMetricCallback(
+    #     compute_metrics_for_keras,
+    #     eval_dataset=datasets["val"],
+    #     batch_size=args.batch_size
     )
     
     # 设置模型检查点
@@ -383,7 +383,7 @@ def train_model(model, tokenizer, datasets, args):
     # 准备回调列表
     callbacks = [
         checkpoint_callback,
-        metric_callback,
+        # metric_callback,
         early_stopping,
         tf.keras.callbacks.TensorBoard(
             log_dir=os.path.join(args.output_dir, "logs"),
@@ -401,6 +401,9 @@ def train_model(model, tokenizer, datasets, args):
         epochs=args.epochs,
         callbacks=callbacks
     )
+    # Epoch-end validation generation
+    logger.info("Epoch-end validation generation and evaluation")
+    evaluate_samples(model, tokenizer, datasets, args)
     
     # 保存最终模型
     model.save_pretrained(f"{args.output_dir}/final_model")
