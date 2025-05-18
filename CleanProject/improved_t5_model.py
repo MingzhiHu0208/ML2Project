@@ -109,14 +109,13 @@ def prepare_dataset(tokenizer, args):
             return_tensors="pt" # Return PyTorch tensors
         )
         
-        with tokenizer.as_target_tokenizer():
-            labels = tokenizer(
-                examples["highlights"],
-                max_length=args.max_target_length,
-                padding="max_length", # Pad to max_length
-                truncation=True,
-                return_tensors="pt" # Return PyTorch tensors
-            )
+        labels = tokenizer(
+            text_target = examples["highlights"],
+            max_length=args.max_target_length,
+            padding="max_length", # Pad to max_length
+            truncation=True,
+            return_tensors="pt" # Return PyTorch tensors
+        )
         
         # Replace pad_token_id in labels with -100 so it's ignored in loss calculation
         model_inputs["labels"] = labels["input_ids"].clone()
@@ -206,7 +205,7 @@ def train_epoch(model, dataloader, optimizer, scheduler, device, scaler, args, c
     for step, batch in enumerate(progress_bar):
         batch = {k: v.to(device) for k, v in batch.items()}
         
-        with autocast(enabled=args.mixed_precision):
+        with autocast("cuda", enabled=args.mixed_precision):
             outputs = model(**batch)
             loss = outputs.loss
         
@@ -244,7 +243,7 @@ def evaluate_model(model, dataloader, tokenizer, device, args, desc="评估"):
         for batch in progress_bar:
             batch = {k: v.to(device) for k, v in batch.items()}
             
-            with autocast(enabled=args.mixed_precision): # AMP for evaluation too
+            with autocast("cuda", enabled=args.mixed_precision): # AMP for evaluation too
                 outputs = model(**batch)
                 loss = outputs.loss
             total_eval_loss += loss.item()
@@ -431,7 +430,7 @@ def evaluate_samples(model, tokenizer, raw_dataset, device, args, num_samples=3,
         ).to(device)
 
         with torch.no_grad():
-            with autocast(enabled=args.mixed_precision):
+            with autocast("cuda",  enabled=args.mixed_precision):
                 summary_ids = model.generate(
                     inputs.input_ids,
                     attention_mask=inputs.attention_mask,
