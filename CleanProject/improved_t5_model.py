@@ -11,7 +11,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from torch.optim import AdamW
-from torch.cuda.amp import autocast, GradScaler
+from torch.amp import autocast, GradScaler
 from torch.utils.tensorboard import SummaryWriter # For TensorBoard
 from datasets import load_dataset, Dataset
 from transformers import (
