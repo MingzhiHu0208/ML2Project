@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument("--dataset_config_name", type=str, default="2.0.0", help="Hugging Face数据集配置名称 (例如: cnn_dailymail 的 3.0.0 或 2.0.0)")
     parser.add_argument("--max_source_length", type=int, default=512, help="源文本最大长度")
     parser.add_argument("--max_target_length", type=int, default=128, help="目标摘要最大长度")
-    parser.add_argument("--learning_rate", type=float, default=5e-5, help="学习率") # Adjusted for PyTorch common practice
+    parser.add_argument("--learning_rate", type=float, default=1e-5, help="学习率") # Adjusted for PyTorch common practice
     parser.add_argument("--batch_size", type=int, default=4, help="训练批量大小 (请根据GPU显存调整，4060 8GB 对 small 模型可能需要 2-4)")
     parser.add_argument("--eval_batch_size", type=int, default=8, help="评估批量大小")
     parser.add_argument("--epochs", type=int, default=3, help="训练轮数")
@@ -70,7 +70,10 @@ def parse_args():
     parser.add_argument("--warmup_steps", type=int, default=500, help="预热步数")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="权重衰减率")
     parser.add_argument("--seed", type=int, default=42, help="随机种子")
-    parser.add_argument("--mixed_precision", action="store_true", default=True, help="是否使用混合精度训练 (推荐)")
+    mp_group = parser.add_mutually_exclusive_group()
+    mp_group.add_argument("--mixed_precision",      dest="mixed_precision", action="store_true",  help="启用 AMP")
+    mp_group.add_argument("--no_mixed_precision",   dest="mixed_precision", action="store_false", help="禁用 AMP")
+    parser.set_defaults(mixed_precision=True)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1, help="梯度累积步数 (用于模拟更大batch size)")
     parser.add_argument("--use_compile", action="store_true", help="是否使用 torch.compile (PyTorch 2.0+, 实验性)")
     parser.add_argument("--early_stopping_patience", type=int, default=3, help="早停耐心轮数 (基于验证集损失)")
@@ -309,7 +312,7 @@ def main():
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=num_training_steps)
     
     # 混合精度 Scaler
-    scaler = GradScaler(enabled=args.mixed_precision)
+    scaler = GradScaler(enabled=args.mixed_precision, init_scale = 128)
 
     # 训练循环
     best_eval_loss = float('inf')
